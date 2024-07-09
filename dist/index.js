@@ -18902,11 +18902,11 @@ Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
       command_1.issue("echo", enabled ? "on" : "off");
     }
     exports2.setCommandEcho = setCommandEcho;
-    function setFailed(message) {
+    function setFailed2(message) {
       process.exitCode = ExitCode.Failure;
       error(message);
     }
-    exports2.setFailed = setFailed;
+    exports2.setFailed = setFailed2;
     function isDebug() {
       return process.env["RUNNER_DEBUG"] === "1";
     }
@@ -22930,13 +22930,13 @@ var diagnosticSchema = z.object({
 
 // src/index.ts
 var import_promises = require("fs/promises");
+var core = __toESM(require_core());
 
 // src/render.ts
 var import_posix2 = require("path/posix");
 
 // src/index.ts
-var import_core = __toESM(require_core());
-import_core.default.setFailed("testing");
+core.setFailed("testing");
 /*! Bundled license information:
 
 undici/lib/fetch/body.js:

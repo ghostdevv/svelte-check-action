@@ -1,7 +1,7 @@
 import { get_diagnostics } from './diagnostic';
 import { writeFile } from 'node:fs/promises';
+import * as core from '@actions/core';
 import { render } from './render';
-import core from '@actions/core';
 
 core.setFailed('testing');
 
