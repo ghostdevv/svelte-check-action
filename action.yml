@@ -1,0 +1,21 @@
+name: 'Svelte Check for PRs'
+description: 'Provides a Svelte Check readout on the files in a Pull Request'
+
+# Add your action's branding here. This will appear on the GitHub Marketplace.
+branding:
+  icon: 'search'
+  color: 'orange'
+
+# inputs:
+#   milliseconds:
+#     description: 'Your input description here'
+#     required: true
+#     default: '1000'
+
+# outputs:
+#   time:
+#     description: 'Your output description here'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
