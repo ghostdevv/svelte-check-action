@@ -1,0 +1,9 @@
+{
+    "name": "svelte-check-action",
+    "private": true,
+    "type": "module",
+    "scripts": {},
+    "devDependencies": {
+        "typescript": "^5.4.5"
+    }
+}
