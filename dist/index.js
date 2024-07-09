@@ -1,7 +1,3 @@
-// src/diagnostic.ts
-import { exec } from "node:child_process";
-import { join } from "node:path/posix";
-
 // node_modules/.pnpm/zod@3.23.8/node_modules/zod/lib/index.mjs
 var util;
 (function(util2) {
@@ -3934,77 +3930,7 @@ var diagnosticSchema = z.object({
   code: z.union([z.number(), z.string()]).optional(),
   source: z.string().optional()
 });
-async function get_diagnostics(cwd) {
-  return new Promise((resolve) => {
-    exec(
-      "pnpm exec svelte-check --output machine-verbose",
-      { cwd },
-      (error, stdout, stderr) => {
-        const lines = [...stdout.split("\n"), ...stderr.split("\n")];
-        const diagnostics = [];
-        for (const line of lines) {
-          const result = line.trim().match(/^\d+\s(?<diagnostic>.*)$/);
-          if (result && result.groups) {
-            try {
-              const raw = JSON.parse(result.groups.diagnostic);
-              const { filename, ...diagnostic } = diagnosticSchema.parse(raw);
-              diagnostics.push({
-                ...diagnostic,
-                fileName: filename,
-                path: join(cwd, filename)
-              });
-            } catch (e) {
-            }
-          }
-        }
-        resolve(diagnostics);
-      }
-    );
-  });
-}
-
-// src/index.ts
-import { writeFile } from "node:fs/promises";
-
-// src/render.ts
-import { join as join2 } from "node:path/posix";
-async function render(all_diagnostics2, cwd, changed_files) {
-  let diagnostic_count = 0;
-  let markdown2 = ``;
-  for (const file of changed_files) {
-    const diagnostics = all_diagnostics2.filter((d) => d.path == join2(cwd, file));
-    if (diagnostics.length == 0) continue;
-    const diagnostics_markdown = diagnostics.map(
-      // prettier-ignore
-      (d) => `#### ${file}:${d.start.line}:${d.start.character}
-
-\`\`\`ts
-${d.message}
-\`\`\`
-`
-    );
-    diagnostic_count += diagnostics.length;
-    markdown2 += `
-
-<details>
-<summary>${file}</summary>
-
-${diagnostics_markdown.join("\n")}
-</details>`;
-  }
-  return `# Svelte Check Results
-
-Found **${diagnostic_count}** errors (${all_diagnostics2.length} total)
-
-${markdown2.trim()}
-`;
-}
 
 // src/index.ts
 import core from "@actions/core";
 core.setFailed("testing");
-var CWD = "";
-var CHANGED_FILES = [];
-var all_diagnostics = await get_diagnostics(CWD);
-var markdown = await render(all_diagnostics, CWD, CHANGED_FILES);
-await writeFile("./output.md", markdown, "utf-8");

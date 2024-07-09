@@ -1,12 +1,15 @@
 import { get_diagnostics } from './diagnostic';
 import { writeFile } from 'node:fs/promises';
 import { render } from './render';
+import core from '@actions/core';
 
-const CWD = '';
+core.setFailed('testing');
 
-const CHANGED_FILES = [];
+// const CWD = '';
 
-const all_diagnostics = await get_diagnostics(CWD);
-const markdown = await render(all_diagnostics, CWD, CHANGED_FILES);
+// const CHANGED_FILES: string[] = [];
 
-await writeFile('./output.md', markdown, 'utf-8');
+// const all_diagnostics = await get_diagnostics(CWD);
+// const markdown = await render(all_diagnostics, CWD, CHANGED_FILES);
+
+// await writeFile('./output.md', markdown, 'utf-8');
