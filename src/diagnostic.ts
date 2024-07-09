@@ -29,11 +29,20 @@ const diagnosticSchema = z.object({
 
 type RawDiagnostic = z.infer<typeof diagnosticSchema>;
 
+/**
+ * A svelte-check diagnostic provides an issue in the codebase
+ * patched to include an aboslute file path
+ */
 export interface Diagnostic extends Omit<RawDiagnostic, 'filename'> {
 	fileName: string;
 	path: string;
 }
 
+/**
+ * Run svelte-check at a given directory and return all the issues it finds
+ * @param cwd The directory to run svelte-check in
+ * @returns Diagnostics
+ */
 export async function get_diagnostics(cwd: string) {
 	return new Promise<Diagnostic[]>((resolve) => {
 		exec(
