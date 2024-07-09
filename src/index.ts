@@ -1,19 +1,12 @@
 import { get_diagnostics } from './diagnostic';
-import { relative } from 'node:path/posix';
-import cardinal from 'cardinal';
+import { writeFile } from 'node:fs/promises';
+import { render } from './render';
 
-const TARGET = '';
+const CWD = '';
 
-const diagnostics = await get_diagnostics(TARGET);
+const CHANGED_FILES = [];
 
-for (const diagnostic of diagnostics) {
-	console.log(
-		`[${diagnostic.type.toUpperCase()}]`,
-		// prettier-ignore
-		`${relative(TARGET, diagnostic.path)}:${diagnostic.start.line}:${diagnostic.start.character}\n`,
-		cardinal.highlight(diagnostic.message),
-		'\n\n',
-	);
-}
+const all_diagnostics = await get_diagnostics(CWD);
+const markdown = await render(all_diagnostics, CWD, CHANGED_FILES);
 
-console.log('results', diagnostics.length);
+await writeFile('./output.md', markdown, 'utf-8');

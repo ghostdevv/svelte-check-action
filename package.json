@@ -4,9 +4,7 @@
     "type": "module",
     "scripts": {},
     "devDependencies": {
-        "@types/cardinal": "^2.1.1",
         "@types/node": "^20.14.10",
-        "cardinal": "^2.1.1",
         "typescript": "^5.4.5",
         "zod": "^3.23.8"
     }
