@@ -2,9 +2,15 @@
     "name": "svelte-check-action",
     "private": true,
     "type": "module",
-    "scripts": {},
+    "exports": {
+        ".": "./dist/index.js"
+    },
+    "scripts": {
+        "build": "tsup src/index.ts --format esm"
+    },
     "devDependencies": {
         "@types/node": "^20.14.10",
+        "tsup": "^8.1.0",
         "typescript": "^5.4.5",
         "zod": "^3.23.8"
     }

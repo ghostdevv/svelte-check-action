@@ -10,7 +10,7 @@
         "isolatedModules": true,
         "verbatimModuleSyntax": true,
         "module": "ESNext",
-        "target": "es2020",
+        "target": "ESNext",
         "moduleResolution": "Bundler"
     },
     "exclude": ["node_modules/**"]
