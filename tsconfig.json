@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "allowJs": true,
+		"checkJs": false,
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+		"skipLibCheck": true,
+		"allowSyntheticDefaultImports": true,
+		"strict": true,
+        "isolatedModules": true,
+        "verbatimModuleSyntax": true,
+        "module": "ESNext",
+        "target": "es2020",
+        "moduleResolution": "Bundler"
+    },
+    "exclude": ["node_modules/**"]
+}
