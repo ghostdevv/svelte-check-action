@@ -39,7 +39,12 @@ async function main() {
 	const diagnostics = await get_diagnostics(given_root);
 	const markdown = await render(diagnostics, changed_files);
 
-	console.log('res', diagnostics.length, markdown.length, changed_files);
+	await octokit.rest.issues.createComment({
+		issue_number: pull_number,
+		body: markdown,
+		owner,
+		repo,
+	});
 }
 
 main()

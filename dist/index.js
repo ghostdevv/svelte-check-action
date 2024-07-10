@@ -27124,7 +27124,12 @@ async function main() {
   const changed_files = pr_files.map((file) => (0, import_node_path.join)(root, file.filename));
   const diagnostics = await get_diagnostics(given_root);
   const markdown = await render(diagnostics, changed_files);
-  console.log("res", diagnostics.length, markdown.length, changed_files);
+  await octokit.rest.issues.createComment({
+    issue_number: pull_number,
+    body: markdown,
+    owner,
+    repo
+  });
 }
 main().then(() => console.log("Finished")).catch((error) => core.setFailed(error instanceof Error ? error.message : `${error}`));
 /*! Bundled license information:
