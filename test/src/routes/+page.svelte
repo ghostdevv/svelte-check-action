@@ -5,3 +5,5 @@
 <div on:click={() => {}}></div>
 
 <input autofocus />
+
+<div accessKey="z" />
