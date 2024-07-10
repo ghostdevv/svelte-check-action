@@ -15,17 +15,25 @@ async function main() {
 
 	const { owner, repo } = github.context.repo;
 
-	const { data: pr } = await octokit.rest.pulls.get({
+	// const { data: pr } = await octokit.rest.pulls.get({
+	// 	pull_number: pr_number,
+	// 	owner,
+	// 	repo,
+	// });
+
+	const { data: pr_files } = await octokit.rest.pulls.listFiles({
 		pull_number: pr_number,
 		owner,
 		repo,
 	});
 
-	console.log(`PR Title: ${pr.title}`);
-	console.log(`PR Body: ${pr.body}`);
-	console.log(`PR Author: ${pr.user.login}`);
-	console.log(`PR Base Branch: ${pr.base.ref}`);
-	console.log(`PR Head Branch: ${pr.head.ref}`);
+	console.log(JSON.stringify(pr_files, null, 2));
+
+	// console.log(`PR Title: ${pr.title}`);
+	// console.log(`PR Body: ${pr.body}`);
+	// console.log(`PR Author: ${pr.user.login}`);
+	// console.log(`PR Base Branch: ${pr.base.ref}`);
+	// console.log(`PR Head Branch: ${pr.head.ref}`);
 }
 
 main()

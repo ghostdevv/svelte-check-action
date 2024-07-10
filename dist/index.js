@@ -27047,16 +27047,12 @@ async function main() {
   const pr_number = github.context.payload.pull_request?.number;
   if (!pr_number) throw new Error("Can't find a pull request, are you running this on a pr?");
   const { owner, repo } = github.context.repo;
-  const { data: pr } = await octokit.rest.pulls.get({
+  const { data: pr_files } = await octokit.rest.pulls.listFiles({
     pull_number: pr_number,
     owner,
     repo
   });
-  console.log(`PR Title: ${pr.title}`);
-  console.log(`PR Body: ${pr.body}`);
-  console.log(`PR Author: ${pr.user.login}`);
-  console.log(`PR Base Branch: ${pr.base.ref}`);
-  console.log(`PR Head Branch: ${pr.head.ref}`);
+  console.log(JSON.stringify(pr_files, null, 2));
 }
 main().then(() => console.log("Finished")).catch((error) => core.setFailed(error instanceof Error ? error.message : `${error}`));
 /*! Bundled license information:
