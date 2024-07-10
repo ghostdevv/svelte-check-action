@@ -3,3 +3,5 @@
 </script>
 
 <div on:click={() => {}}></div>
+
+<input autofocus />
