@@ -22961,7 +22961,7 @@ var require_core = __commonJS({
       process.env["PATH"] = `${inputPath}${path.delimiter}${process.env["PATH"]}`;
     }
     exports2.addPath = addPath;
-    function getInput(name, options) {
+    function getInput2(name, options) {
       const val = process.env[`INPUT_${name.replace(/ /g, "_").toUpperCase()}`] || "";
       if (options && options.required && !val) {
         throw new Error(`Input required and not supplied: ${name}`);
@@ -22971,9 +22971,9 @@ var require_core = __commonJS({
       }
       return val.trim();
     }
-    exports2.getInput = getInput;
+    exports2.getInput = getInput2;
     function getMultilineInput(name, options) {
-      const inputs = getInput(name, options).split("\n").filter((x) => x !== "");
+      const inputs = getInput2(name, options).split("\n").filter((x) => x !== "");
       if (options && options.trimWhitespace === false) {
         return inputs;
       }
@@ -22983,7 +22983,7 @@ var require_core = __commonJS({
     function getBooleanInput(name, options) {
       const trueValue = ["true", "True", "TRUE"];
       const falseValue = ["false", "False", "FALSE"];
-      const val = getInput(name, options);
+      const val = getInput2(name, options);
       if (trueValue.includes(val))
         return true;
       if (falseValue.includes(val))
@@ -27030,6 +27030,34 @@ var diagnosticSchema = z.object({
   code: z.union([z.number(), z.string()]).optional(),
   source: z.string().optional()
 });
+async function get_diagnostics(cwd) {
+  return new Promise((resolve) => {
+    (0, import_node_child_process.exec)(
+      "pnpm exec svelte-check --output machine-verbose",
+      { cwd },
+      (error, stdout, stderr) => {
+        const lines = [...stdout.split("\n"), ...stderr.split("\n")];
+        const diagnostics = [];
+        for (const line of lines) {
+          const result = line.trim().match(/^\d+\s(?<diagnostic>.*)$/);
+          if (result && result.groups) {
+            try {
+              const raw = JSON.parse(result.groups.diagnostic);
+              const { filename, ...diagnostic } = diagnosticSchema.parse(raw);
+              diagnostics.push({
+                ...diagnostic,
+                fileName: filename,
+                path: (0, import_posix.join)(cwd, filename)
+              });
+            } catch (e) {
+            }
+          }
+        }
+        resolve(diagnostics);
+      }
+    );
+  });
+}
 
 // src/index.ts
 var import_promises = require("fs/promises");
@@ -27038,24 +27066,66 @@ var core = __toESM(require_core());
 
 // src/render.ts
 var import_posix2 = require("path/posix");
+async function render(all_diagnostics, changed_files) {
+  let diagnostic_count = 0;
+  let markdown = ``;
+  for (const file of changed_files) {
+    const diagnostics = all_diagnostics.filter((d) => d.path == file);
+    if (diagnostics.length == 0) continue;
+    const diagnostics_markdown = diagnostics.map(
+      // prettier-ignore
+      (d) => `#### ${file}:${d.start.line}:${d.start.character}
+
+\`\`\`ts
+${d.message}
+\`\`\`
+`
+    );
+    diagnostic_count += diagnostics.length;
+    markdown += `
+
+<details>
+<summary>${file}</summary>
+
+${diagnostics_markdown.join("\n")}
+</details>`;
+  }
+  return `# Svelte Check Results
+
+Found **${diagnostic_count}** errors (${all_diagnostics.length} total)
+
+${markdown.trim()}
+`;
+}
 
 // src/index.ts
+var import_node_path = require("path");
 async function main() {
   const token = process.env.GITHUB_TOKEN;
   if (!token) throw new Error("Please add the GITHUB_TOKEN environment variable");
   const root = process.env.GITHUB_WORKSPACE;
   if (!root) throw new Error("Missing GITHUB_WORKSPACE environment variable");
+  const given_root = (0, import_node_path.join)(root, core.getInput("path") || ".");
   const octokit = github.getOctokit(token);
-  const pr_number = github.context.payload.pull_request?.number;
-  if (!pr_number) throw new Error("Can't find a pull request, are you running this on a pr?");
+  const pull_number = github.context.payload.pull_request?.number;
+  if (!pull_number) throw new Error("Can't find a pull request, are you running this on a pr?");
   const { owner, repo } = github.context.repo;
-  const { data: pr_files } = await octokit.rest.pulls.listFiles({
-    pull_number: pr_number,
+  console.log("using context", {
+    root,
+    given_root,
+    pull_number,
     owner,
     repo
   });
-  console.log(1, root);
-  console.log(2, JSON.stringify(pr_files, null, 2));
+  const { data: pr_files } = await octokit.rest.pulls.listFiles({
+    pull_number,
+    owner,
+    repo
+  });
+  const changed_files = pr_files.map((file) => (0, import_node_path.join)(root, file.filename));
+  const diagnostics = await get_diagnostics(given_root);
+  const markdown = await render(diagnostics, changed_files);
+  console.log("res", diagnostics.length, markdown.length, changed_files);
 }
 main().then(() => console.log("Finished")).catch((error) => core.setFailed(error instanceof Error ? error.message : `${error}`));
 /*! Bundled license information:
