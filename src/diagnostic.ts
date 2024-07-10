@@ -10,9 +10,7 @@ const diagnosticSchema = z.object({
 	type: z
 		.string()
 		.toLowerCase()
-		.refine((type): type is 'error' | 'warning' =>
-			['error', 'warning'].includes(type),
-		),
+		.refine((type): type is 'error' | 'warning' => ['error', 'warning'].includes(type)),
 	filename: z.string().transform((filename) => `./${filename}`),
 	start: z.object({
 		line: z.number().transform((line) => line + 1),
@@ -46,22 +44,20 @@ export interface Diagnostic extends Omit<RawDiagnostic, 'filename'> {
 export async function get_diagnostics(cwd: string) {
 	return new Promise<Diagnostic[]>((resolve) => {
 		exec(
-			'pnpm exec svelte-check --output machine-verbose',
+			'npx -y svelte-check --output machine-verbose',
 			{ cwd },
+			// todo handle error properly
 			(error, stdout, stderr) => {
 				const lines = [...stdout.split('\n'), ...stderr.split('\n')];
 				const diagnostics: Diagnostic[] = [];
 
 				for (const line of lines) {
-					const result = line
-						.trim()
-						.match(/^\d+\s(?<diagnostic>.*)$/);
+					const result = line.trim().match(/^\d+\s(?<diagnostic>.*)$/);
 
 					if (result && result.groups) {
 						try {
 							const raw = JSON.parse(result.groups.diagnostic);
-							const { filename, ...diagnostic } =
-								diagnosticSchema.parse(raw);
+							const { filename, ...diagnostic } = diagnosticSchema.parse(raw);
 
 							diagnostics.push({
 								...diagnostic,
