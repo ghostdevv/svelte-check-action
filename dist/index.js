@@ -27043,6 +27043,8 @@ var import_posix2 = require("path/posix");
 async function main() {
   const token = process.env.GITHUB_TOKEN;
   if (!token) throw new Error("Please add the GITHUB_TOKEN environment variable");
+  const root = process.env.GITHUB_WORKSPACE;
+  if (!root) throw new Error("Missing GITHUB_WORKSPACE environment variable");
   const octokit = github.getOctokit(token);
   const pr_number = github.context.payload.pull_request?.number;
   if (!pr_number) throw new Error("Can't find a pull request, are you running this on a pr?");
@@ -27052,7 +27054,8 @@ async function main() {
     owner,
     repo
   });
-  console.log(JSON.stringify(pr_files, null, 2));
+  console.log(1, root);
+  console.log(2, JSON.stringify(pr_files, null, 2));
 }
 main().then(() => console.log("Finished")).catch((error) => core.setFailed(error instanceof Error ? error.message : `${error}`));
 /*! Bundled license information:
