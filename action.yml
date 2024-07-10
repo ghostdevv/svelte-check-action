@@ -6,11 +6,11 @@ branding:
   icon: 'search'
   color: 'orange'
 
-# inputs:
-#   milliseconds:
-#     description: 'Your input description here'
-#     required: true
-#     default: '1000'
+inputs:
+  path:
+    description: 'The path to run svelte-check from'
+    required: false
+    default: '.'
 
 # outputs:
 #   time:
