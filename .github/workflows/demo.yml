@@ -13,3 +13,5 @@ jobs:
 
       - name: Run the action
         uses: ghostdevv/svelte-check-action@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

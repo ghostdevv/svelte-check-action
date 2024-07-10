@@ -5,7 +5,9 @@ import * as core from '@actions/core';
 import { render } from './render';
 
 async function main() {
-	const token = core.getInput('github-token', { required: true });
+	const token = process.env.GITHUB_TOKEN;
+	if (!token) throw new Error('Please add the GITHUB_TOKEN environment variable');
+
 	const octokit = github.getOctokit(token);
 
 	const pr_number = github.context.payload.pull_request?.number;

@@ -22961,7 +22961,7 @@ var require_core = __commonJS({
       process.env["PATH"] = `${inputPath}${path.delimiter}${process.env["PATH"]}`;
     }
     exports2.addPath = addPath;
-    function getInput2(name, options) {
+    function getInput(name, options) {
       const val = process.env[`INPUT_${name.replace(/ /g, "_").toUpperCase()}`] || "";
       if (options && options.required && !val) {
         throw new Error(`Input required and not supplied: ${name}`);
@@ -22971,9 +22971,9 @@ var require_core = __commonJS({
       }
       return val.trim();
     }
-    exports2.getInput = getInput2;
+    exports2.getInput = getInput;
     function getMultilineInput(name, options) {
-      const inputs = getInput2(name, options).split("\n").filter((x) => x !== "");
+      const inputs = getInput(name, options).split("\n").filter((x) => x !== "");
       if (options && options.trimWhitespace === false) {
         return inputs;
       }
@@ -22983,7 +22983,7 @@ var require_core = __commonJS({
     function getBooleanInput(name, options) {
       const trueValue = ["true", "True", "TRUE"];
       const falseValue = ["false", "False", "FALSE"];
-      const val = getInput2(name, options);
+      const val = getInput(name, options);
       if (trueValue.includes(val))
         return true;
       if (falseValue.includes(val))
@@ -27041,7 +27041,8 @@ var import_posix2 = require("path/posix");
 
 // src/index.ts
 async function main() {
-  const token = core.getInput("github-token", { required: true });
+  const token = process.env.GITHUB_TOKEN;
+  if (!token) throw new Error("Please add the GITHUB_TOKEN environment variable");
   const octokit = github.getOctokit(token);
   const pr_number = github.context.payload.pull_request?.number;
   if (!pr_number) throw new Error("Can't find a pull request, are you running this on a pr?");
