@@ -38,3 +38,5 @@ main()
 // const markdown = await render(all_diagnostics, CWD, CHANGED_FILES);
 
 // await writeFile('./output.md', markdown, 'utf-8');
+
+// hello world
