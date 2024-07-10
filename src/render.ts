@@ -7,12 +7,12 @@ import { join } from 'node:path/posix';
  * @param cwd
  * @param changed_files
  */
-export async function render(all_diagnostics: Diagnostic[], cwd: string, changed_files: string[]) {
+export async function render(all_diagnostics: Diagnostic[], changed_files: string[]) {
 	let diagnostic_count = 0;
 	let markdown = ``;
 
 	for (const file of changed_files) {
-		const diagnostics = all_diagnostics.filter((d) => d.path == join(cwd, file));
+		const diagnostics = all_diagnostics.filter((d) => d.path == file);
 		if (diagnostics.length == 0) continue;
 
 		const diagnostics_markdown = diagnostics.map(

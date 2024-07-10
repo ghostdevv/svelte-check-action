@@ -3,6 +3,7 @@ import { writeFile } from 'node:fs/promises';
 import * as github from '@actions/github';
 import * as core from '@actions/core';
 import { render } from './render';
+import { join } from 'node:path';
 
 async function main() {
 	const token = process.env.GITHUB_TOKEN;
@@ -11,33 +12,34 @@ async function main() {
 	const root = process.env.GITHUB_WORKSPACE;
 	if (!root) throw new Error('Missing GITHUB_WORKSPACE environment variable');
 
+	const given_root = join(root, core.getInput('path') || '.');
+
 	const octokit = github.getOctokit(token);
 
-	const pr_number = github.context.payload.pull_request?.number;
-	if (!pr_number) throw new Error("Can't find a pull request, are you running this on a pr?");
+	const pull_number = github.context.payload.pull_request?.number;
+	if (!pull_number) throw new Error("Can't find a pull request, are you running this on a pr?");
 
 	const { owner, repo } = github.context.repo;
 
-	// const { data: pr } = await octokit.rest.pulls.get({
-	// 	pull_number: pr_number,
-	// 	owner,
-	// 	repo,
-	// });
-
-	const { data: pr_files } = await octokit.rest.pulls.listFiles({
-		pull_number: pr_number,
+	console.log('using context', {
+		root,
+		given_root,
+		pull_number,
 		owner,
 		repo,
 	});
 
-	console.log(1, root);
-	console.log(2, JSON.stringify(pr_files, null, 2));
+	const { data: pr_files } = await octokit.rest.pulls.listFiles({
+		pull_number,
+		owner,
+		repo,
+	});
 
-	// console.log(`PR Title: ${pr.title}`);
-	// console.log(`PR Body: ${pr.body}`);
-	// console.log(`PR Author: ${pr.user.login}`);
-	// console.log(`PR Base Branch: ${pr.base.ref}`);
-	// console.log(`PR Head Branch: ${pr.head.ref}`);
+	const changed_files = pr_files.map((file) => join(root, file.filename));
+	const diagnostics = await get_diagnostics(given_root);
+	const markdown = await render(diagnostics, changed_files);
+
+	console.log('res', diagnostics.length, markdown.length, changed_files);
 }
 
 main()
