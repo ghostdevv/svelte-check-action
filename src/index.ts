@@ -1,5 +1,4 @@
 import { get_diagnostics } from './diagnostic';
-import { writeFile } from 'node:fs/promises';
 import * as github from '@actions/github';
 import * as core from '@actions/core';
 import { render } from './render';
@@ -9,10 +8,10 @@ async function main() {
 	const token = process.env.GITHUB_TOKEN;
 	if (!token) throw new Error('Please add the GITHUB_TOKEN environment variable');
 
-	const root = process.env.GITHUB_WORKSPACE;
-	if (!root) throw new Error('Missing GITHUB_WORKSPACE environment variable');
+	const repo_root = process.env.GITHUB_WORKSPACE;
+	if (!repo_root) throw new Error('Missing GITHUB_WORKSPACE environment variable');
 
-	const given_root = join(root, core.getInput('path') || '.');
+	const given_root = join(repo_root, core.getInput('path') || '.');
 
 	const octokit = github.getOctokit(token);
 
@@ -22,7 +21,7 @@ async function main() {
 	const { owner, repo } = github.context.repo;
 
 	console.log('using context', {
-		root,
+		root: repo_root,
 		given_root,
 		pull_number,
 		owner,
@@ -35,9 +34,9 @@ async function main() {
 		repo,
 	});
 
-	const changed_files = pr_files.map((file) => join(root, file.filename));
+	const changed_files = pr_files.map((file) => join(repo_root, file.filename));
 	const diagnostics = await get_diagnostics(given_root);
-	const markdown = await render(diagnostics, changed_files);
+	const markdown = await render(diagnostics, repo_root, changed_files);
 
 	await octokit.rest.issues.createComment({
 		issue_number: pull_number,
@@ -50,14 +49,3 @@ async function main() {
 main()
 	.then(() => console.log('Finished'))
 	.catch((error) => core.setFailed(error instanceof Error ? error.message : `${error}`));
-
-// const CWD = '';
-
-// const CHANGED_FILES: string[] = [];
-
-// const all_diagnostics = await get_diagnostics(CWD);
-// const markdown = await render(all_diagnostics, CWD, CHANGED_FILES);
-
-// await writeFile('./output.md', markdown, 'utf-8');
-
-// hello world
