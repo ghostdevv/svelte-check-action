@@ -8,6 +8,9 @@ async function main() {
 	const token = process.env.GITHUB_TOKEN;
 	if (!token) throw new Error('Please add the GITHUB_TOKEN environment variable');
 
+	const root = process.env.GITHUB_WORKSPACE;
+	if (!root) throw new Error('Missing GITHUB_WORKSPACE environment variable');
+
 	const octokit = github.getOctokit(token);
 
 	const pr_number = github.context.payload.pull_request?.number;
@@ -27,7 +30,8 @@ async function main() {
 		repo,
 	});
 
-	console.log(JSON.stringify(pr_files, null, 2));
+	console.log(1, root);
+	console.log(2, JSON.stringify(pr_files, null, 2));
 
 	// console.log(`PR Title: ${pr.title}`);
 	// console.log(`PR Body: ${pr.body}`);
