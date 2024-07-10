@@ -1,5 +1,4 @@
 import type { Diagnostic } from './diagnostic';
-import { join } from 'node:path/posix';
 
 /**
  * Render a set of diagnostics to markdown, will filter by changed files
@@ -7,22 +6,28 @@ import { join } from 'node:path/posix';
  * @param cwd
  * @param changed_files
  */
-export async function render(all_diagnostics: Diagnostic[], changed_files: string[]) {
+export async function render(
+	all_diagnostics: Diagnostic[],
+	repo_root: string,
+	changed_files: string[],
+) {
 	let diagnostic_count = 0;
 	let markdown = ``;
 
-	for (const file of changed_files) {
-		const diagnostics = all_diagnostics.filter((d) => d.path == file);
+	for (const path of changed_files) {
+		const diagnostics = all_diagnostics.filter((d) => d.path == path);
 		if (diagnostics.length == 0) continue;
+
+		const readable_path = path.replace(repo_root, '').replace(/^\/+/, '');
 
 		const diagnostics_markdown = diagnostics.map(
 			// prettier-ignore
-			(d) => `#### ${file}:${d.start.line}:${d.start.character}\n\n\`\`\`ts\n${d.message}\n\`\`\`\n`,
+			(d) => `#### ${readable_path}:${d.start.line}:${d.start.character}\n\n\`\`\`ts\n${d.message}\n\`\`\`\n`,
 		);
 
 		diagnostic_count += diagnostics.length;
 		// prettier-ignore
-		markdown += `\n\n<details>\n<summary>${file}</summary>\n\n${diagnostics_markdown.join('\n')}\n</details>`;
+		markdown += `\n\n<details>\n<summary>${readable_path}</summary>\n\n${diagnostics_markdown.join('\n')}\n</details>`;
 	}
 
 	// prettier-ignore

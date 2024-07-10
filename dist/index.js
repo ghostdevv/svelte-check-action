@@ -22566,7 +22566,7 @@ var require_summary = __commonJS({
     exports2.summary = exports2.markdownSummary = exports2.SUMMARY_DOCS_URL = exports2.SUMMARY_ENV_VAR = void 0;
     var os_1 = require("os");
     var fs_1 = require("fs");
-    var { access, appendFile, writeFile: writeFile2 } = fs_1.promises;
+    var { access, appendFile, writeFile } = fs_1.promises;
     exports2.SUMMARY_ENV_VAR = "GITHUB_STEP_SUMMARY";
     exports2.SUMMARY_DOCS_URL = "https://docs.github.com/actions/using-workflows/workflow-commands-for-github-actions#adding-a-job-summary";
     var Summary = class {
@@ -22624,7 +22624,7 @@ var require_summary = __commonJS({
         return __awaiter(this, void 0, void 0, function* () {
           const overwrite = !!(options === null || options === void 0 ? void 0 : options.overwrite);
           const filePath = yield this.filePath();
-          const writeFunc = overwrite ? writeFile2 : appendFile;
+          const writeFunc = overwrite ? writeFile : appendFile;
           yield writeFunc(filePath, this._buffer, { encoding: "utf8" });
           return this.emptyBuffer();
         });
@@ -27059,21 +27059,20 @@ async function get_diagnostics(cwd) {
 }
 
 // src/index.ts
-var import_promises = require("fs/promises");
 var github = __toESM(require_github());
 var core = __toESM(require_core());
 
 // src/render.ts
-var import_posix2 = require("path/posix");
-async function render(all_diagnostics, changed_files) {
+async function render(all_diagnostics, repo_root, changed_files) {
   let diagnostic_count = 0;
   let markdown = ``;
-  for (const file of changed_files) {
-    const diagnostics = all_diagnostics.filter((d) => d.path == file);
+  for (const path of changed_files) {
+    const diagnostics = all_diagnostics.filter((d) => d.path == path);
     if (diagnostics.length == 0) continue;
+    const readable_path = path.replace(repo_root, "").replace(/^\/+/, "");
     const diagnostics_markdown = diagnostics.map(
       // prettier-ignore
-      (d) => `#### ${file}:${d.start.line}:${d.start.character}
+      (d) => `#### ${readable_path}:${d.start.line}:${d.start.character}
 
 \`\`\`ts
 ${d.message}
@@ -27084,7 +27083,7 @@ ${d.message}
     markdown += `
 
 <details>
-<summary>${file}</summary>
+<summary>${readable_path}</summary>
 
 ${diagnostics_markdown.join("\n")}
 </details>`;
@@ -27102,15 +27101,15 @@ var import_node_path = require("path");
 async function main() {
   const token = process.env.GITHUB_TOKEN;
   if (!token) throw new Error("Please add the GITHUB_TOKEN environment variable");
-  const root = process.env.GITHUB_WORKSPACE;
-  if (!root) throw new Error("Missing GITHUB_WORKSPACE environment variable");
-  const given_root = (0, import_node_path.join)(root, core.getInput("path") || ".");
+  const repo_root = process.env.GITHUB_WORKSPACE;
+  if (!repo_root) throw new Error("Missing GITHUB_WORKSPACE environment variable");
+  const given_root = (0, import_node_path.join)(repo_root, core.getInput("path") || ".");
   const octokit = github.getOctokit(token);
   const pull_number = github.context.payload.pull_request?.number;
   if (!pull_number) throw new Error("Can't find a pull request, are you running this on a pr?");
   const { owner, repo } = github.context.repo;
   console.log("using context", {
-    root,
+    root: repo_root,
     given_root,
     pull_number,
     owner,
@@ -27121,9 +27120,9 @@ async function main() {
     owner,
     repo
   });
-  const changed_files = pr_files.map((file) => (0, import_node_path.join)(root, file.filename));
+  const changed_files = pr_files.map((file) => (0, import_node_path.join)(repo_root, file.filename));
   const diagnostics = await get_diagnostics(given_root);
-  const markdown = await render(diagnostics, changed_files);
+  const markdown = await render(diagnostics, repo_root, changed_files);
   await octokit.rest.issues.createComment({
     issue_number: pull_number,
     body: markdown,
