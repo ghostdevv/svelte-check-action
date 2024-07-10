@@ -27014,9 +27014,7 @@ var z = /* @__PURE__ */ Object.freeze({
 
 // src/diagnostic.ts
 var diagnosticSchema = z.object({
-  type: z.string().toLowerCase().refine(
-    (type) => ["error", "warning"].includes(type)
-  ),
+  type: z.string().toLowerCase().refine((type) => ["error", "warning"].includes(type)),
   filename: z.string().transform((filename) => `./${filename}`),
   start: z.object({
     line: z.number().transform((line) => line + 1),
@@ -27033,8 +27031,9 @@ var diagnosticSchema = z.object({
 async function get_diagnostics(cwd) {
   return new Promise((resolve) => {
     (0, import_node_child_process.exec)(
-      "pnpm exec svelte-check --output machine-verbose",
+      "npx -y svelte-check --output machine-verbose",
       { cwd },
+      // todo handle error properly
       (error, stdout, stderr) => {
         const lines = [...stdout.split("\n"), ...stderr.split("\n")];
         const diagnostics = [];
