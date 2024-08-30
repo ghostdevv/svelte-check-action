@@ -1,21 +1,25 @@
 import type { Diagnostic } from './diagnostic';
 import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+
+export interface PRFile {
+	blob_url: string;
+	relative_path: string;
+}
 
 /**
  * Render a set of diagnostics to markdown, will filter by changed files
  * @param all_diagnostics
  * @param cwd
- * @param changed_files
+ * @param pr_files
  */
-export async function render(
-	all_diagnostics: Diagnostic[],
-	repo_root: string,
-	changed_files: string[],
-) {
+export async function render(all_diagnostics: Diagnostic[], repo_root: string, pr_files: PRFile[]) {
 	let diagnostic_count = 0;
 	let markdown = ``;
 
-	for (const path of changed_files) {
+	for (const pr_file of pr_files) {
+		const path = join(repo_root, pr_file.relative_path);
+
 		const diagnostics = all_diagnostics.filter((d) => d.path == path);
 		if (diagnostics.length == 0) continue;
 
@@ -24,7 +28,7 @@ export async function render(
 
 		const diagnostics_markdown = diagnostics.map(
 			// prettier-ignore
-			(d) => `#### ${readable_path}:${d.start.line}:${d.start.character}\n\n\`\`\`ts\n${d.message}\n\n${lines[d.start.line - 1].trim()}\n\`\`\`\n`,
+			(d) => `#### [${readable_path}:${d.start.line}:${d.start.character}](${pr_file.blob_url}#L${d.start.line}${d.start.line != d.end.line ? `-L${d.end.line}` : ''})\n\n\`\`\`ts\n${d.message}\n\n${lines[d.start.line - 1].trim()}\n\`\`\`\n`,
 		);
 
 		diagnostic_count += diagnostics.length;
