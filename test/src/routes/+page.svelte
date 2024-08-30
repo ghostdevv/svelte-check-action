@@ -5,3 +5,9 @@
 <div on:click={() => {}}></div>
 
 <input autofocus />
+
+<div
+	on:mouseenter={() => {
+		console.log('something');
+	}}>
+</div>
