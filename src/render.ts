@@ -5,6 +5,7 @@ import { join } from 'node:path';
 export interface PRFile {
 	blob_url: string;
 	relative_path: string;
+	local_path: string;
 }
 
 /**
@@ -18,13 +19,11 @@ export async function render(all_diagnostics: Diagnostic[], repo_root: string, p
 	let markdown = ``;
 
 	for (const pr_file of pr_files) {
-		const path = join(repo_root, pr_file.relative_path);
-
-		const diagnostics = all_diagnostics.filter((d) => d.path == path);
+		const diagnostics = all_diagnostics.filter((d) => d.path == pr_file.local_path);
 		if (diagnostics.length == 0) continue;
 
-		const readable_path = path.replace(repo_root, '').replace(/^\/+/, '');
-		const lines = await readFile(path, 'utf-8').then((c) => c.split('\n'));
+		const readable_path = pr_file.local_path.replace(repo_root, '').replace(/^\/+/, '');
+		const lines = await readFile(pr_file.local_path, 'utf-8').then((c) => c.split('\n'));
 
 		const diagnostics_markdown = diagnostics.map(
 			// prettier-ignore

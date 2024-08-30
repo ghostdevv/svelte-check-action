@@ -11,8 +11,6 @@ async function main() {
 	const repo_root = process.env.GITHUB_WORKSPACE;
 	if (!repo_root) throw new Error('Missing GITHUB_WORKSPACE environment variable');
 
-	const given_root = join(repo_root, core.getInput('path') || '.');
-
 	const octokit = github.getOctokit(token);
 
 	const pull_number = github.context.payload.pull_request?.number;
@@ -20,9 +18,12 @@ async function main() {
 
 	const { owner, repo } = github.context.repo;
 
+	const diagnostic_paths = core.getMultilineInput('paths').map((path) => join(repo_root, path));
+	if (diagnostic_paths.length == 0) diagnostic_paths.push(repo_root);
+
 	console.log('using context', {
 		root: repo_root,
-		given_root,
+		diagnostic_paths,
 		pull_number,
 		owner,
 		repo,
@@ -34,18 +35,6 @@ async function main() {
 		repo,
 	});
 
-	console.log(
-		JSON.stringify(
-			comments.map((c) => ({
-				id: c.id,
-				author: c.user?.name,
-				content: c.body?.slice(0, 100),
-			})),
-			null,
-			2,
-		),
-	);
-
 	const { data: pr_files_list } = await octokit.rest.pulls.listFiles({
 		pull_number,
 		owner,
@@ -54,12 +43,23 @@ async function main() {
 
 	const pr_files = pr_files_list.map(
 		(file): PRFile => ({
+			local_path: join(repo_root, file.filename),
 			relative_path: file.filename,
 			blob_url: file.blob_url,
 		}),
 	);
 
-	const diagnostics = await get_diagnostics(given_root);
+	const diagnostics = (
+		await Promise.all(
+			diagnostic_paths
+				.filter((d_path) =>
+					// check that there were changes for that diagnostic path
+					pr_files.some((pr_file) => pr_file.local_path.startsWith(d_path)),
+				)
+				.map((path) => get_diagnostics(path)),
+		)
+	).flat();
+
 	const markdown = await render(diagnostics, repo_root, pr_files);
 
 	const last_comment = comments
