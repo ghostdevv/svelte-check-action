@@ -2,6 +2,7 @@
 // https://github.com/SvelteLab/SvelteLab/blob/a3fb823356a9ed1d16eb8535340c9813b7eb547d/src/lib/stores/editor_errors_store.ts#L19
 // https://github.com/SvelteLab/SvelteLab/blob/a3fb823356a9ed1d16eb8535340c9813b7eb547d/src/lib/webcontainer.ts#L301
 
+import { setFailed } from '@actions/core';
 import { exec } from 'node:child_process';
 import { join } from 'node:path/posix';
 import { z } from 'zod';
@@ -43,33 +44,34 @@ export interface Diagnostic extends Omit<RawDiagnostic, 'filename'> {
  */
 export async function get_diagnostics(cwd: string) {
 	return new Promise<Diagnostic[]>((resolve) => {
-		exec(
-			'npx -y svelte-check --output machine-verbose',
-			{ cwd },
-			// todo handle error properly
-			(error, stdout, stderr) => {
-				const lines = [...stdout.split('\n'), ...stderr.split('\n')];
-				const diagnostics: Diagnostic[] = [];
+		exec('npx -y svelte-check --output machine-verbose', { cwd }, (error, stdout, stderr) => {
+			if (typeof error?.code == 'number' && error.code > 1) {
+				console.error('Failed to run svelte-check', error);
+				setFailed(`Failed to run svelte-check: "${error.message}"`);
+				process.exit(1);
+			}
 
-				for (const line of lines) {
-					const result = line.trim().match(/^\d+\s(?<diagnostic>.*)$/);
+			const lines = [...stdout.split('\n'), ...stderr.split('\n')];
+			const diagnostics: Diagnostic[] = [];
 
-					if (result && result.groups) {
-						try {
-							const raw = JSON.parse(result.groups.diagnostic);
-							const { filename, ...diagnostic } = diagnosticSchema.parse(raw);
+			for (const line of lines) {
+				const result = line.trim().match(/^\d+\s(?<diagnostic>.*)$/);
 
-							diagnostics.push({
-								...diagnostic,
-								fileName: filename,
-								path: join(cwd, filename),
-							});
-						} catch (e) {}
-					}
+				if (result && result.groups) {
+					try {
+						const raw = JSON.parse(result.groups.diagnostic);
+						const { filename, ...diagnostic } = diagnosticSchema.parse(raw);
+
+						diagnostics.push({
+							...diagnostic,
+							fileName: filename,
+							path: join(cwd, filename),
+						});
+					} catch (e) {}
 				}
+			}
 
-				resolve(diagnostics);
-			},
-		);
+			resolve(diagnostics);
+		});
 	});
 }
