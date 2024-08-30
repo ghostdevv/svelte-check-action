@@ -1,11 +1,24 @@
 import type { Diagnostic } from './diagnostic';
+import { execSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { format } from 'date-fns';
 
 export interface PRFile {
 	blob_url: string;
 	relative_path: string;
 	local_path: string;
+}
+
+function get_latest_commit() {
+	try {
+		return execSync('git rev-parse --short HEAD').toString().trim();
+	} catch {
+		return 'unknown';
+	}
+}
+
+function pretty_type(type: Diagnostic['type']) {
+	return type == 'error' ? 'Error' : 'Warn';
 }
 
 /**
@@ -27,7 +40,7 @@ export async function render(all_diagnostics: Diagnostic[], repo_root: string, p
 
 		const diagnostics_markdown = diagnostics.map(
 			// prettier-ignore
-			(d) => `#### [${readable_path}:${d.start.line}:${d.start.character}](${pr_file.blob_url}#L${d.start.line}${d.start.line != d.end.line ? `-L${d.end.line}` : ''})\n\n\`\`\`ts\n${d.message}\n\n${lines.slice(d.start.line - 1, d.end.line).join('\n').trim()}\n\`\`\`\n`,
+			(d) => `#### [${readable_path}:${d.start.line}:${d.start.character}](${pr_file.blob_url}#L${d.start.line}${d.start.line != d.end.line ? `-L${d.end.line}` : ''})\n\n\`\`\`ts\n${pretty_type(d.type)}: ${d.message}\n\n${lines.slice(d.start.line - 1, d.end.line).join('\n').trim()}\n\`\`\`\n`,
 		);
 
 		diagnostic_count += diagnostics.length;
@@ -35,6 +48,13 @@ export async function render(all_diagnostics: Diagnostic[], repo_root: string, p
 		markdown += `\n\n<details>\n<summary>${readable_path}</summary>\n\n${diagnostics_markdown.join('\n')}\n</details>`;
 	}
 
+	const now = new Date();
+
+	const main_content = diagnostic_count
+		? // prettier-ignore
+			`Found **${diagnostic_count}** issues with the files in this PR (${all_diagnostics.length} total)\n\n${markdown.trim()}`
+		: 'No issues found! 🎉';
+
 	// prettier-ignore
-	return `# Svelte Check Results\n\nFound **${diagnostic_count}** errors (${all_diagnostics.length} total)\n\n${markdown.trim()}\n`;
+	return `# Svelte Check Results\n\n${main_content}\n\n---\n\nLast Updated: <span title="${now.toISOString()}">${format(now, 'do MMMM \'at\' HH:mm')}</span> (${get_latest_commit()})\n`;
 }

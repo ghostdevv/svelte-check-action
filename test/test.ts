@@ -10,6 +10,7 @@ const pr_files = Array.from(new Set(diagnostics.map((d) => d.path))).map(
 		relative_path: file.replace(import.meta.dirname, ''),
 		blob_url:
 			'https://github.com/ghostdevv/svelte-check-action/blob/fake-commit-hash',
+		local_path: file,
 	}),
 );
 
