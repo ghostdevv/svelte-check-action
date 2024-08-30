@@ -27120,11 +27120,6 @@ async function main() {
     owner,
     repo
   });
-  const { data: comments } = await octokit.rest.issues.listComments({
-    issue_number: pull_number,
-    owner,
-    repo
-  });
   const { data: pr_files_list } = await octokit.rest.pulls.listFiles({
     pull_number,
     owner,
@@ -27147,6 +27142,11 @@ async function main() {
     }
   }
   const markdown = await render(diagnostics, repo_root, pr_files);
+  const { data: comments } = await octokit.rest.issues.listComments({
+    issue_number: pull_number,
+    owner,
+    repo
+  });
   const last_comment = comments.filter((comment) => comment.body?.startsWith("# Svelte Check Results")).sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)).at(0);
   if (last_comment) {
     await octokit.rest.issues.updateComment({
