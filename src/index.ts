@@ -21,14 +21,6 @@ async function main() {
 	const diagnostic_paths = core.getMultilineInput('paths').map((path) => join(repo_root, path));
 	if (diagnostic_paths.length == 0) diagnostic_paths.push(repo_root);
 
-	console.log('using context', {
-		root: repo_root,
-		diagnostic_paths,
-		pull_number,
-		owner,
-		repo,
-	});
-
 	const { data: pr_files_list } = await octokit.rest.pulls.listFiles({
 		pull_number,
 		owner,
@@ -42,6 +34,15 @@ async function main() {
 			blob_url: file.blob_url,
 		}),
 	);
+
+	console.log('debug:', {
+		diagnostic_paths,
+		root: repo_root,
+		pull_number,
+		pr_files,
+		owner,
+		repo,
+	});
 
 	const diagnostics: Diagnostic[] = [];
 
