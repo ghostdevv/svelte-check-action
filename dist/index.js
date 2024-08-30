@@ -27113,18 +27113,6 @@ async function main() {
   const { owner, repo } = github.context.repo;
   const diagnostic_paths = core.getMultilineInput("paths").map((path) => (0, import_node_path2.join)(repo_root, path));
   if (diagnostic_paths.length == 0) diagnostic_paths.push(repo_root);
-  console.log("using context", {
-    root: repo_root,
-    diagnostic_paths,
-    pull_number,
-    owner,
-    repo
-  });
-  const { data: comments } = await octokit.rest.issues.listComments({
-    issue_number: pull_number,
-    owner,
-    repo
-  });
   const { data: pr_files_list } = await octokit.rest.pulls.listFiles({
     pull_number,
     owner,
@@ -27137,6 +27125,14 @@ async function main() {
       blob_url: file.blob_url
     })
   );
+  console.log("debug:", {
+    diagnostic_paths,
+    root: repo_root,
+    pull_number,
+    pr_files,
+    owner,
+    repo
+  });
   const diagnostics = [];
   for (const d_path of diagnostic_paths) {
     const has_changed = pr_files.some((pr_file) => pr_file.local_path.startsWith(d_path));
@@ -27147,6 +27143,11 @@ async function main() {
     }
   }
   const markdown = await render(diagnostics, repo_root, pr_files);
+  const { data: comments } = await octokit.rest.issues.listComments({
+    issue_number: pull_number,
+    owner,
+    repo
+  });
   const last_comment = comments.filter((comment) => comment.body?.startsWith("# Svelte Check Results")).sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)).at(0);
   if (last_comment) {
     await octokit.rest.issues.updateComment({

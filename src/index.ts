@@ -21,20 +21,6 @@ async function main() {
 	const diagnostic_paths = core.getMultilineInput('paths').map((path) => join(repo_root, path));
 	if (diagnostic_paths.length == 0) diagnostic_paths.push(repo_root);
 
-	console.log('using context', {
-		root: repo_root,
-		diagnostic_paths,
-		pull_number,
-		owner,
-		repo,
-	});
-
-	const { data: comments } = await octokit.rest.issues.listComments({
-		issue_number: pull_number,
-		owner,
-		repo,
-	});
-
 	const { data: pr_files_list } = await octokit.rest.pulls.listFiles({
 		pull_number,
 		owner,
@@ -49,6 +35,15 @@ async function main() {
 		}),
 	);
 
+	console.log('debug:', {
+		diagnostic_paths,
+		root: repo_root,
+		pull_number,
+		pr_files,
+		owner,
+		repo,
+	});
+
 	const diagnostics: Diagnostic[] = [];
 
 	for (const d_path of diagnostic_paths) {
@@ -62,6 +57,12 @@ async function main() {
 	}
 
 	const markdown = await render(diagnostics, repo_root, pr_files);
+
+	const { data: comments } = await octokit.rest.issues.listComments({
+		issue_number: pull_number,
+		owner,
+		repo,
+	});
 
 	const last_comment = comments
 		.filter((comment) => comment.body?.startsWith('# Svelte Check Results'))
