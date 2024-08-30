@@ -40,6 +40,10 @@ jobs:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
+This will add a comment to your PRs with any errors, for example:
+
+![example comment](./.github/example-comment.png)
+
 ## Options
 
 | Option  | Description                                                                                                          |
