@@ -1,5 +1,6 @@
 {
     "name": "svelte-check-action",
+    "version": "1.0.0",
     "private": true,
     "exports": {
         ".": "./dist/index.js"
