@@ -27112,25 +27112,26 @@ async function main() {
   const octokit = github.getOctokit(token);
   const pull_number = github.context.payload.pull_request?.number;
   if (!pull_number) throw new Error("Can't find a pull request, are you running this on a pr?");
-  const { data: user } = await octokit.rest.users.getAuthenticated();
   const { owner, repo } = github.context.repo;
   console.log("using context", {
-    username: user.name,
-    user_id: user.id,
     root: repo_root,
     given_root,
     pull_number,
     owner,
     repo
   });
-  const { data: comments } = await octokit.rest.pulls.listReviewComments({
-    pull_number,
+  const { data: comments } = await octokit.rest.issues.listComments({
+    issue_number: pull_number,
     owner,
     repo
   });
   console.log(
     JSON.stringify(
-      comments.map((c) => ({ id: c.id, author: c.user.name, content: c.body.slice(0, 100) })),
+      comments.map((c) => ({
+        id: c.id,
+        author: c.user?.name,
+        content: c.body?.slice(0, 100)
+      })),
       null,
       2
     )
@@ -27148,7 +27149,7 @@ async function main() {
   );
   const diagnostics = await get_diagnostics(given_root);
   const markdown = await render(diagnostics, repo_root, pr_files);
-  const last_comment = comments.filter((comment) => comment.user.id == user.id && comment.body.match(/svelte check/im)).sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)).at(0);
+  const last_comment = comments.filter((comment) => comment.body?.startsWith("# Svelte Check Results")).sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)).at(0);
   if (last_comment) {
     await octokit.rest.issues.updateComment({
       comment_id: last_comment.id,
