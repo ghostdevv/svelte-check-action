@@ -1,8 +1,12 @@
-import { render, type PRFile } from './render';
 import { get_diagnostics, type Diagnostic } from './diagnostic';
+import { join, relative, normalize } from 'node:path';
+import { render, type PRFile } from './render';
 import * as github from '@actions/github';
 import * as core from '@actions/core';
-import { join } from 'node:path';
+
+function is_subdir(parent: string, child: string) {
+	return !relative(normalize(parent), normalize(child)).startsWith('..');
+}
 
 async function main() {
 	const token = process.env.GITHUB_TOKEN;
@@ -47,7 +51,7 @@ async function main() {
 	const diagnostics: Diagnostic[] = [];
 
 	for (const d_path of diagnostic_paths) {
-		const has_changed = pr_files.some((pr_file) => pr_file.local_path.startsWith(d_path));
+		const has_changed = pr_files.some((pr_file) => is_subdir(d_path, pr_file.local_path));
 		console.log(has_changed ? 'checking' : 'skipped', d_path);
 
 		if (has_changed) {

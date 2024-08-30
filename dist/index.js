@@ -23094,45 +23094,6 @@ var require_github = __commonJS({
   }
 });
 
-// src/render.ts
-var import_promises = require("fs/promises");
-var import_node_path = require("path");
-async function render(all_diagnostics, repo_root, pr_files) {
-  let diagnostic_count = 0;
-  let markdown = ``;
-  for (const pr_file of pr_files) {
-    const diagnostics = all_diagnostics.filter((d) => d.path == pr_file.local_path);
-    if (diagnostics.length == 0) continue;
-    const readable_path = pr_file.local_path.replace(repo_root, "").replace(/^\/+/, "");
-    const lines = await (0, import_promises.readFile)(pr_file.local_path, "utf-8").then((c) => c.split("\n"));
-    const diagnostics_markdown = diagnostics.map(
-      // prettier-ignore
-      (d) => `#### [${readable_path}:${d.start.line}:${d.start.character}](${pr_file.blob_url}#L${d.start.line}${d.start.line != d.end.line ? `-L${d.end.line}` : ""})
-
-\`\`\`ts
-${d.message}
-
-${lines.slice(d.start.line - 1, d.end.line).join("\n").trim()}
-\`\`\`
-`
-    );
-    diagnostic_count += diagnostics.length;
-    markdown += `
-
-<details>
-<summary>${readable_path}</summary>
-
-${diagnostics_markdown.join("\n")}
-</details>`;
-  }
-  return `# Svelte Check Results
-
-Found **${diagnostic_count}** errors (${all_diagnostics.length} total)
-
-${markdown.trim()}
-`;
-}
-
 // src/diagnostic.ts
 var import_core = __toESM(require_core());
 var import_node_child_process = require("child_process");
@@ -27099,9 +27060,53 @@ async function get_diagnostics(cwd) {
 }
 
 // src/index.ts
+var import_node_path2 = require("path");
+
+// src/render.ts
+var import_promises = require("fs/promises");
+var import_node_path = require("path");
+async function render(all_diagnostics, repo_root, pr_files) {
+  let diagnostic_count = 0;
+  let markdown = ``;
+  for (const pr_file of pr_files) {
+    const diagnostics = all_diagnostics.filter((d) => d.path == pr_file.local_path);
+    if (diagnostics.length == 0) continue;
+    const readable_path = pr_file.local_path.replace(repo_root, "").replace(/^\/+/, "");
+    const lines = await (0, import_promises.readFile)(pr_file.local_path, "utf-8").then((c) => c.split("\n"));
+    const diagnostics_markdown = diagnostics.map(
+      // prettier-ignore
+      (d) => `#### [${readable_path}:${d.start.line}:${d.start.character}](${pr_file.blob_url}#L${d.start.line}${d.start.line != d.end.line ? `-L${d.end.line}` : ""})
+
+\`\`\`ts
+${d.message}
+
+${lines.slice(d.start.line - 1, d.end.line).join("\n").trim()}
+\`\`\`
+`
+    );
+    diagnostic_count += diagnostics.length;
+    markdown += `
+
+<details>
+<summary>${readable_path}</summary>
+
+${diagnostics_markdown.join("\n")}
+</details>`;
+  }
+  return `# Svelte Check Results
+
+Found **${diagnostic_count}** errors (${all_diagnostics.length} total)
+
+${markdown.trim()}
+`;
+}
+
+// src/index.ts
 var github = __toESM(require_github());
 var core = __toESM(require_core());
-var import_node_path2 = require("path");
+function is_subdir(parent, child) {
+  return !(0, import_node_path2.relative)((0, import_node_path2.normalize)(parent), (0, import_node_path2.normalize)(child)).startsWith("..");
+}
 async function main() {
   const token = process.env.GITHUB_TOKEN;
   if (!token) throw new Error("Please add the GITHUB_TOKEN environment variable");
@@ -27135,7 +27140,7 @@ async function main() {
   });
   const diagnostics = [];
   for (const d_path of diagnostic_paths) {
-    const has_changed = pr_files.some((pr_file) => pr_file.local_path.startsWith(d_path));
+    const has_changed = pr_files.some((pr_file) => is_subdir(d_path, pr_file.local_path));
     console.log(has_changed ? "checking" : "skipped", d_path);
     if (has_changed) {
       const new_diagnostics = await get_diagnostics(d_path);
