@@ -28573,6 +28573,9 @@ function get_latest_commit() {
     return "unknown";
   }
 }
+function pretty_type(type) {
+  return type == "error" ? "Error" : "Warn";
+}
 async function render(all_diagnostics, repo_root, pr_files) {
   let diagnostic_count = 0;
   let markdown = ``;
@@ -28586,7 +28589,7 @@ async function render(all_diagnostics, repo_root, pr_files) {
       (d) => `#### [${readable_path}:${d.start.line}:${d.start.character}](${pr_file.blob_url}#L${d.start.line}${d.start.line != d.end.line ? `-L${d.end.line}` : ""})
 
 \`\`\`ts
-${d.message}
+${pretty_type(d.type)}: ${d.message}
 
 ${lines.slice(d.start.line - 1, d.end.line).join("\n").trim()}
 \`\`\`
@@ -28604,7 +28607,7 @@ ${diagnostics_markdown.join("\n")}
   const now = /* @__PURE__ */ new Date();
   const main_content = diagnostic_count ? (
     // prettier-ignore
-    `Found **${diagnostic_count}** errors (${all_diagnostics.length} total)
+    `Found **${diagnostic_count}** issues with the files in this PR (${all_diagnostics.length} total)
 
 ${markdown.trim()}`
   ) : "No issues found! \u{1F389}";
