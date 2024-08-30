@@ -35,7 +35,7 @@ jobs:
 
             # Run the svelte check action
             - name: Svelte Check
-              uses: ghostdevv/svelte-check-action@main
+              uses: ghostdevv/svelte-check-action@v1
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -54,7 +54,7 @@ You can configure the action by passing the options under the `with` key, for ex
 
 ```yaml
 - name: Svelte Check
-  uses: ghostdevv/svelte-check-action@main
+  uses: ghostdevv/svelte-check-action@v1
   with:
       paths: |
           ./packages/app
