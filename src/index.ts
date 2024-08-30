@@ -1,5 +1,5 @@
 import { render, type PRFile } from './render';
-import { get_diagnostics } from './diagnostic';
+import { get_diagnostics, type Diagnostic } from './diagnostic';
 import * as github from '@actions/github';
 import * as core from '@actions/core';
 import { join } from 'node:path';
@@ -49,16 +49,17 @@ async function main() {
 		}),
 	);
 
-	const diagnostics = (
-		await Promise.all(
-			diagnostic_paths
-				.filter((d_path) =>
-					// check that there were changes for that diagnostic path
-					pr_files.some((pr_file) => pr_file.local_path.startsWith(d_path)),
-				)
-				.map((path) => get_diagnostics(path)),
-		)
-	).flat();
+	const diagnostics: Diagnostic[] = [];
+
+	for (const d_path of diagnostic_paths) {
+		const has_changed = pr_files.some((pr_file) => pr_file.local_path.startsWith(d_path));
+		console.log(has_changed ? 'checking' : 'skipped', d_path);
+
+		if (has_changed) {
+			const new_diagnostics = await get_diagnostics(d_path);
+			diagnostics.push(...new_diagnostics);
+		}
+	}
 
 	const markdown = await render(diagnostics, repo_root, pr_files);
 

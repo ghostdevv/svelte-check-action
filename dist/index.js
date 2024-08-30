@@ -27137,14 +27137,15 @@ async function main() {
       blob_url: file.blob_url
     })
   );
-  const diagnostics = (await Promise.all(
-    diagnostic_paths.filter(
-      (d_path) => (
-        // check that there were changes for that diagnostic path
-        pr_files.some((pr_file) => pr_file.local_path.startsWith(d_path))
-      )
-    ).map((path) => get_diagnostics(path))
-  )).flat();
+  const diagnostics = [];
+  for (const d_path of diagnostic_paths) {
+    const has_changed = pr_files.some((pr_file) => pr_file.local_path.startsWith(d_path));
+    console.log(has_changed ? "checking" : "skipped", d_path);
+    if (has_changed) {
+      const new_diagnostics = await get_diagnostics(d_path);
+      diagnostics.push(...new_diagnostics);
+    }
+  }
   const markdown = await render(diagnostics, repo_root, pr_files);
   const last_comment = comments.filter((comment) => comment.body?.startsWith("# Svelte Check Results")).sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)).at(0);
   if (last_comment) {
