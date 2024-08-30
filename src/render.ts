@@ -1,4 +1,5 @@
 import type { Diagnostic } from './diagnostic';
+import { readFile } from 'node:fs/promises';
 
 /**
  * Render a set of diagnostics to markdown, will filter by changed files
@@ -19,10 +20,11 @@ export async function render(
 		if (diagnostics.length == 0) continue;
 
 		const readable_path = path.replace(repo_root, '').replace(/^\/+/, '');
+		const lines = await readFile(path, 'utf-8').then((c) => c.split('\n'));
 
 		const diagnostics_markdown = diagnostics.map(
 			// prettier-ignore
-			(d) => `#### ${readable_path}:${d.start.line}:${d.start.character}\n\n\`\`\`ts\n${d.message}\n\`\`\`\n`,
+			(d) => `#### ${readable_path}:${d.start.line}:${d.start.character}\n\n\`\`\`ts\n${d.message}\n\n${lines[d.start.line - 1].trim()}\n\`\`\`\n`,
 		);
 
 		diagnostic_count += diagnostics.length;
