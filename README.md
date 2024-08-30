@@ -46,9 +46,9 @@ This will add a comment to your PRs with any errors, for example:
 
 ## Options
 
-| Option  | Description                                                                                                          |
-| ------- | -------------------------------------------------------------------------------------------------------------------- |
-| `paths` | The folder(s) to run svelte-check in, one per line. It'll only run svelte-check if files in that folder have changed |
+| Option  | Description                                                                                                                                                                                                              |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `paths` | The folder(s) to run svelte-check in, one per line. It'll only run svelte-check if files in that folder have changed. `svelte-kit sync` will be ran before diagnostics if SvelteKit is found at the folder package.json. |
 
 You can configure the action by passing the options under the `with` key, for example:
 

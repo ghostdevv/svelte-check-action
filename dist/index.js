@@ -23124,9 +23124,11 @@ var require_github = __commonJS({
 });
 
 // src/diagnostic.ts
+var import_promises = require("fs/promises");
 var import_core = __toESM(require_core());
 var import_node_child_process = require("child_process");
-var import_posix = require("path/posix");
+var import_node_fs = require("fs");
+var import_node_path = require("path");
 
 // node_modules/.pnpm/zod@3.23.8/node_modules/zod/lib/index.mjs
 var util;
@@ -27059,7 +27061,8 @@ var diagnosticSchema = z.object({
   source: z.string().optional()
 });
 async function get_diagnostics(cwd) {
-  return new Promise((resolve) => {
+  await try_run_svelte_kit_sync(cwd);
+  return await new Promise((resolve) => {
     (0, import_node_child_process.exec)("npx -y svelte-check --output machine-verbose", { cwd }, (error, stdout, stderr) => {
       if (typeof error?.code == "number" && error.code > 1) {
         console.error("Failed to run svelte-check", error);
@@ -27077,7 +27080,7 @@ async function get_diagnostics(cwd) {
             diagnostics.push({
               ...diagnostic,
               fileName: filename,
-              path: (0, import_posix.join)(cwd, filename)
+              path: (0, import_node_path.join)(cwd, filename)
             });
           } catch (e) {
           }
@@ -27087,13 +27090,24 @@ async function get_diagnostics(cwd) {
     });
   });
 }
+async function try_run_svelte_kit_sync(cwd) {
+  const pkg_path = (0, import_node_path.join)(cwd, "package.json");
+  if (!(0, import_node_fs.existsSync)(pkg_path)) return;
+  const pkg = JSON.parse(await (0, import_promises.readFile)(pkg_path, "utf-8"));
+  if (pkg.dependencies?.["@sveltejs/kit"] || pkg.devDependencies?.["@sveltejs/kit"]) {
+    console.log(`running svelte-kit sync at "${cwd}"`);
+    await new Promise((resolve) => {
+      (0, import_node_child_process.exec)("npx -y svelte-kit sync", resolve);
+    });
+  }
+}
 
 // src/index.ts
-var import_node_path = require("path");
+var import_node_path2 = require("path");
 
 // src/render.ts
 var import_node_child_process2 = require("child_process");
-var import_promises = require("fs/promises");
+var import_promises2 = require("fs/promises");
 
 // node_modules/.pnpm/date-fns@3.6.0/node_modules/date-fns/toDate.mjs
 function toDate(argument) {
@@ -28680,7 +28694,7 @@ async function render(all_diagnostics, repo_root, pr_files) {
     const diagnostics = all_diagnostics.filter((d) => d.path == pr_file.local_path);
     if (diagnostics.length == 0) continue;
     const readable_path = pr_file.local_path.replace(repo_root, "").replace(/^\/+/, "");
-    const lines = await (0, import_promises.readFile)(pr_file.local_path, "utf-8").then((c) => c.split("\n"));
+    const lines = await (0, import_promises2.readFile)(pr_file.local_path, "utf-8").then((c) => c.split("\n"));
     const diagnostics_markdown = diagnostics.map(
       // prettier-ignore
       (d) => `#### [${readable_path}:${d.start.line}:${d.start.character}](${pr_file.blob_url}#L${d.start.line}${d.start.line != d.end.line ? `-L${d.end.line}` : ""})
@@ -28722,7 +28736,7 @@ Last Updated: <span title="${now.toISOString()}">${format(now, "do MMMM 'at' HH:
 var github = __toESM(require_github());
 var core = __toESM(require_core());
 function is_subdir(parent, child) {
-  return !(0, import_node_path.relative)((0, import_node_path.normalize)(parent), (0, import_node_path.normalize)(child)).startsWith("..");
+  return !(0, import_node_path2.relative)((0, import_node_path2.normalize)(parent), (0, import_node_path2.normalize)(child)).startsWith("..");
 }
 async function main() {
   const token = process.env.GITHUB_TOKEN;
@@ -28733,7 +28747,7 @@ async function main() {
   const pull_number = github.context.payload.pull_request?.number;
   if (!pull_number) throw new Error("Can't find a pull request, are you running this on a pr?");
   const { owner, repo } = github.context.repo;
-  const diagnostic_paths = core.getMultilineInput("paths").map((path) => (0, import_node_path.join)(repo_root, path));
+  const diagnostic_paths = core.getMultilineInput("paths").map((path) => (0, import_node_path2.join)(repo_root, path));
   if (diagnostic_paths.length == 0) diagnostic_paths.push(repo_root);
   const { data: pr_files_list } = await octokit.rest.pulls.listFiles({
     pull_number,
@@ -28742,7 +28756,7 @@ async function main() {
   });
   const pr_files = pr_files_list.map(
     (file) => ({
-      local_path: (0, import_node_path.join)(repo_root, file.filename),
+      local_path: (0, import_node_path2.join)(repo_root, file.filename),
       relative_path: file.filename,
       blob_url: file.blob_url
     })
