@@ -88,8 +88,14 @@ async function try_run_svelte_kit_sync(cwd: string) {
 
 	if (pkg.dependencies?.['@sveltejs/kit'] || pkg.devDependencies?.['@sveltejs/kit']) {
 		console.log(`running svelte-kit sync at "${cwd}"`);
-		await new Promise((resolve) => {
-			exec('npx -y svelte-kit sync', resolve);
+		await new Promise<void>((resolve) => {
+			exec('npx -y svelte-kit sync', (error) => {
+				if (error) {
+					console.log('svelte-kit sync failed', error);
+				}
+
+				resolve();
+			});
 		});
 	}
 }
