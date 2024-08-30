@@ -23094,6 +23094,46 @@ var require_github = __commonJS({
   }
 });
 
+// src/render.ts
+var import_promises = require("fs/promises");
+var import_node_path = require("path");
+async function render(all_diagnostics, repo_root, pr_files) {
+  let diagnostic_count = 0;
+  let markdown = ``;
+  for (const pr_file of pr_files) {
+    const path = (0, import_node_path.join)(repo_root, pr_file.relative_path);
+    const diagnostics = all_diagnostics.filter((d) => d.path == path);
+    if (diagnostics.length == 0) continue;
+    const readable_path = path.replace(repo_root, "").replace(/^\/+/, "");
+    const lines = await (0, import_promises.readFile)(path, "utf-8").then((c) => c.split("\n"));
+    const diagnostics_markdown = diagnostics.map(
+      // prettier-ignore
+      (d) => `#### [${readable_path}:${d.start.line}:${d.start.character}](${pr_file.blob_url}#L${d.start.line}${d.start.line != d.end.line ? `-L${d.end.line}` : ""})
+
+\`\`\`ts
+${d.message}
+
+${lines.slice(d.start.line - 1, d.end.line).join("\n").trim()}
+\`\`\`
+`
+    );
+    diagnostic_count += diagnostics.length;
+    markdown += `
+
+<details>
+<summary>${readable_path}</summary>
+
+${diagnostics_markdown.join("\n")}
+</details>`;
+  }
+  return `# Svelte Check Results
+
+Found **${diagnostic_count}** errors (${all_diagnostics.length} total)
+
+${markdown.trim()}
+`;
+}
+
 // src/diagnostic.ts
 var import_core = __toESM(require_core());
 var import_node_child_process = require("child_process");
@@ -27062,49 +27102,13 @@ async function get_diagnostics(cwd) {
 // src/index.ts
 var github = __toESM(require_github());
 var core = __toESM(require_core());
-
-// src/render.ts
-async function render(all_diagnostics, repo_root, changed_files) {
-  let diagnostic_count = 0;
-  let markdown = ``;
-  for (const path of changed_files) {
-    const diagnostics = all_diagnostics.filter((d) => d.path == path);
-    if (diagnostics.length == 0) continue;
-    const readable_path = path.replace(repo_root, "").replace(/^\/+/, "");
-    const diagnostics_markdown = diagnostics.map(
-      // prettier-ignore
-      (d) => `#### ${readable_path}:${d.start.line}:${d.start.character}
-
-\`\`\`ts
-${d.message}
-\`\`\`
-`
-    );
-    diagnostic_count += diagnostics.length;
-    markdown += `
-
-<details>
-<summary>${readable_path}</summary>
-
-${diagnostics_markdown.join("\n")}
-</details>`;
-  }
-  return `# Svelte Check Results
-
-Found **${diagnostic_count}** errors (${all_diagnostics.length} total)
-
-${markdown.trim()}
-`;
-}
-
-// src/index.ts
-var import_node_path = require("path");
+var import_node_path2 = require("path");
 async function main() {
   const token = process.env.GITHUB_TOKEN;
   if (!token) throw new Error("Please add the GITHUB_TOKEN environment variable");
   const repo_root = process.env.GITHUB_WORKSPACE;
   if (!repo_root) throw new Error("Missing GITHUB_WORKSPACE environment variable");
-  const given_root = (0, import_node_path.join)(repo_root, core.getInput("path") || ".");
+  const given_root = (0, import_node_path2.join)(repo_root, core.getInput("path") || ".");
   const octokit = github.getOctokit(token);
   const pull_number = github.context.payload.pull_request?.number;
   if (!pull_number) throw new Error("Can't find a pull request, are you running this on a pr?");
@@ -27116,14 +27120,19 @@ async function main() {
     owner,
     repo
   });
-  const { data: pr_files } = await octokit.rest.pulls.listFiles({
+  const { data: pr_files_list } = await octokit.rest.pulls.listFiles({
     pull_number,
     owner,
     repo
   });
-  const changed_files = pr_files.map((file) => (0, import_node_path.join)(repo_root, file.filename));
+  const pr_files = pr_files_list.map(
+    (file) => ({
+      relative_path: file.filename,
+      blob_url: file.blob_url
+    })
+  );
   const diagnostics = await get_diagnostics(given_root);
-  const markdown = await render(diagnostics, repo_root, changed_files);
+  const markdown = await render(diagnostics, repo_root, pr_files);
   await octokit.rest.issues.createComment({
     issue_number: pull_number,
     body: markdown,

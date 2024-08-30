@@ -1,7 +1,7 @@
+import { render, type PRFile } from './render';
 import { get_diagnostics } from './diagnostic';
 import * as github from '@actions/github';
 import * as core from '@actions/core';
-import { render } from './render';
 import { join } from 'node:path';
 
 async function main() {
@@ -28,15 +28,21 @@ async function main() {
 		repo,
 	});
 
-	const { data: pr_files } = await octokit.rest.pulls.listFiles({
+	const { data: pr_files_list } = await octokit.rest.pulls.listFiles({
 		pull_number,
 		owner,
 		repo,
 	});
 
-	const changed_files = pr_files.map((file) => join(repo_root, file.filename));
+	const pr_files = pr_files_list.map(
+		(file): PRFile => ({
+			relative_path: file.filename,
+			blob_url: file.blob_url,
+		}),
+	);
+
 	const diagnostics = await get_diagnostics(given_root);
-	const markdown = await render(diagnostics, repo_root, changed_files);
+	const markdown = await render(diagnostics, repo_root, pr_files);
 
 	await octokit.rest.issues.createComment({
 		issue_number: pull_number,
