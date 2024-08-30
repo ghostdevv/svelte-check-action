@@ -46,6 +46,11 @@ export async function render(all_diagnostics: Diagnostic[], repo_root: string, p
 
 	const now = new Date();
 
+	const main_content = diagnostic_count
+		? // prettier-ignore
+			`Found **${diagnostic_count}** errors (${all_diagnostics.length} total)\n\n${markdown.trim()}`
+		: 'No issues found! 🎉';
+
 	// prettier-ignore
-	return `# Svelte Check Results\n\nFound **${diagnostic_count}** errors (${all_diagnostics.length} total)\n\n${markdown.trim()}\n\n---\n\nLast Updated: <span title="${now.toISOString()}">${format(now, 'do MMMM \'at\' HH:mm')}</span> (${get_latest_commit()})\n`;
+	return `# Svelte Check Results\n\n${main_content}\n\n---\n\nLast Updated: <span title="${now.toISOString()}">${format(now, 'do MMMM \'at\' HH:mm')}</span> (${get_latest_commit()})\n`;
 }

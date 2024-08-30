@@ -28602,11 +28602,15 @@ ${diagnostics_markdown.join("\n")}
 </details>`;
   }
   const now = /* @__PURE__ */ new Date();
+  const main_content = diagnostic_count ? (
+    // prettier-ignore
+    `Found **${diagnostic_count}** errors (${all_diagnostics.length} total)
+
+${markdown.trim()}`
+  ) : "No issues found! \u{1F389}";
   return `# Svelte Check Results
 
-Found **${diagnostic_count}** errors (${all_diagnostics.length} total)
-
-${markdown.trim()}
+${main_content}
 
 ---
 
