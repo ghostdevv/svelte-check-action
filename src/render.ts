@@ -1,11 +1,20 @@
 import type { Diagnostic } from './diagnostic';
+import { execSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { format } from 'date-fns';
 
 export interface PRFile {
 	blob_url: string;
 	relative_path: string;
 	local_path: string;
+}
+
+function get_latest_commit() {
+	try {
+		return execSync('git rev-parse --short HEAD').toString().trim();
+	} catch {
+		return 'unknown';
+	}
 }
 
 /**
@@ -35,6 +44,8 @@ export async function render(all_diagnostics: Diagnostic[], repo_root: string, p
 		markdown += `\n\n<details>\n<summary>${readable_path}</summary>\n\n${diagnostics_markdown.join('\n')}\n</details>`;
 	}
 
+	const now = new Date();
+
 	// prettier-ignore
-	return `# Svelte Check Results\n\nFound **${diagnostic_count}** errors (${all_diagnostics.length} total)\n\n${markdown.trim()}\n`;
+	return `# Svelte Check Results\n\nFound **${diagnostic_count}** errors (${all_diagnostics.length} total)\n\n${markdown.trim()}\n\n---\n\nLast Updated: <span title="${now.toISOString()}">${format(now, 'do MMMM \'at\' HH:mm')}</span> (${get_latest_commit()})\n`;
 }
