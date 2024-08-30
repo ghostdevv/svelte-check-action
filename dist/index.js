@@ -18858,7 +18858,7 @@ var require_core = __commonJS({
       process.env["PATH"] = `${inputPath}${path.delimiter}${process.env["PATH"]}`;
     }
     exports2.addPath = addPath;
-    function getInput2(name, options) {
+    function getInput(name, options) {
       const val = process.env[`INPUT_${name.replace(/ /g, "_").toUpperCase()}`] || "";
       if (options && options.required && !val) {
         throw new Error(`Input required and not supplied: ${name}`);
@@ -18868,19 +18868,19 @@ var require_core = __commonJS({
       }
       return val.trim();
     }
-    exports2.getInput = getInput2;
-    function getMultilineInput(name, options) {
-      const inputs = getInput2(name, options).split("\n").filter((x) => x !== "");
+    exports2.getInput = getInput;
+    function getMultilineInput2(name, options) {
+      const inputs = getInput(name, options).split("\n").filter((x) => x !== "");
       if (options && options.trimWhitespace === false) {
         return inputs;
       }
       return inputs.map((input) => input.trim());
     }
-    exports2.getMultilineInput = getMultilineInput;
+    exports2.getMultilineInput = getMultilineInput2;
     function getBooleanInput(name, options) {
       const trueValue = ["true", "True", "TRUE"];
       const falseValue = ["false", "False", "FALSE"];
-      const val = getInput2(name, options);
+      const val = getInput(name, options);
       if (trueValue.includes(val))
         return true;
       if (falseValue.includes(val))
@@ -23101,11 +23101,10 @@ async function render(all_diagnostics, repo_root, pr_files) {
   let diagnostic_count = 0;
   let markdown = ``;
   for (const pr_file of pr_files) {
-    const path = (0, import_node_path.join)(repo_root, pr_file.relative_path);
-    const diagnostics = all_diagnostics.filter((d) => d.path == path);
+    const diagnostics = all_diagnostics.filter((d) => d.path == pr_file.local_path);
     if (diagnostics.length == 0) continue;
-    const readable_path = path.replace(repo_root, "").replace(/^\/+/, "");
-    const lines = await (0, import_promises.readFile)(path, "utf-8").then((c) => c.split("\n"));
+    const readable_path = pr_file.local_path.replace(repo_root, "").replace(/^\/+/, "");
+    const lines = await (0, import_promises.readFile)(pr_file.local_path, "utf-8").then((c) => c.split("\n"));
     const diagnostics_markdown = diagnostics.map(
       // prettier-ignore
       (d) => `#### [${readable_path}:${d.start.line}:${d.start.character}](${pr_file.blob_url}#L${d.start.line}${d.start.line != d.end.line ? `-L${d.end.line}` : ""})
@@ -27108,14 +27107,15 @@ async function main() {
   if (!token) throw new Error("Please add the GITHUB_TOKEN environment variable");
   const repo_root = process.env.GITHUB_WORKSPACE;
   if (!repo_root) throw new Error("Missing GITHUB_WORKSPACE environment variable");
-  const given_root = (0, import_node_path2.join)(repo_root, core.getInput("path") || ".");
   const octokit = github.getOctokit(token);
   const pull_number = github.context.payload.pull_request?.number;
   if (!pull_number) throw new Error("Can't find a pull request, are you running this on a pr?");
   const { owner, repo } = github.context.repo;
+  const diagnostic_paths = core.getMultilineInput("paths").map((path) => (0, import_node_path2.join)(repo_root, path));
+  if (diagnostic_paths.length == 0) diagnostic_paths.push(repo_root);
   console.log("using context", {
     root: repo_root,
-    given_root,
+    diagnostic_paths,
     pull_number,
     owner,
     repo
@@ -27125,17 +27125,6 @@ async function main() {
     owner,
     repo
   });
-  console.log(
-    JSON.stringify(
-      comments.map((c) => ({
-        id: c.id,
-        author: c.user?.name,
-        content: c.body?.slice(0, 100)
-      })),
-      null,
-      2
-    )
-  );
   const { data: pr_files_list } = await octokit.rest.pulls.listFiles({
     pull_number,
     owner,
@@ -27143,11 +27132,19 @@ async function main() {
   });
   const pr_files = pr_files_list.map(
     (file) => ({
+      local_path: (0, import_node_path2.join)(repo_root, file.filename),
       relative_path: file.filename,
       blob_url: file.blob_url
     })
   );
-  const diagnostics = await get_diagnostics(given_root);
+  const diagnostics = (await Promise.all(
+    diagnostic_paths.filter(
+      (d_path) => (
+        // check that there were changes for that diagnostic path
+        pr_files.some((pr_file) => pr_file.local_path.startsWith(d_path))
+      )
+    ).map((path) => get_diagnostics(path))
+  )).flat();
   const markdown = await render(diagnostics, repo_root, pr_files);
   const last_comment = comments.filter((comment) => comment.body?.startsWith("# Svelte Check Results")).sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)).at(0);
   if (last_comment) {

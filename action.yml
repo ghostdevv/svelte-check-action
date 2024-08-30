@@ -7,14 +7,10 @@ branding:
   color: 'orange'
 
 inputs:
-  path:
-    description: 'The path to run svelte-check from'
+  paths:
+    description: 'The path(s) to run svelte-check from, one per line'
     required: false
     default: '.'
-
-# outputs:
-#   time:
-#     description: 'Your output description here'
 
 runs:
   using: 'node20'
