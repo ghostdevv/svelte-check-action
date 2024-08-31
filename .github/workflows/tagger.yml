@@ -1,7 +1,6 @@
-name: Keep the versions up-to-date
+name: Tagger
 
 on:
-  workflow_dispatch:
   release:
     types:
       - released
@@ -18,7 +17,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
      
-      - name: Tagger
-        uses: Actions-R-Us/actions-tagger@v2
+      - name: Tag Release
+        id: action-tagger
+        uses: stevenjdh/action-tagger@v1
         with:
-          publish_latest_tag: true
+          set-latest-tag: true
