@@ -2,9 +2,7 @@ name: Tagger
 
 on:
   release:
-    types:
-      - released
-      - edited
+    types: [created, edited]
 
 jobs:
   actions-tagger:
@@ -18,7 +16,6 @@ jobs:
         uses: actions/checkout@v4
      
       - name: Tag Release
-        id: action-tagger
         uses: stevenjdh/action-tagger@v1
         with:
           set-latest-tag: true
