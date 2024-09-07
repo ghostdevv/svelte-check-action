@@ -12,7 +12,7 @@ inputs:
         required: false
         default: '.'
     filterChanges:
-        description: 'Whether to filter svelte-check output to only include errors in the files the PR changes'
+        description: 'When true only the files that change (in the pull request) will be checked'
         required: false
         default: 'true'
 

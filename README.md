@@ -1,6 +1,6 @@
 # Svelte Check Action
 
-This action runs [svelte-check](http://npmjs.com/svelte-check) on the files that change in a PR, then adds a comment which reports any errors in those files. The inspiration came from wanting to have svelte-check run in CI without failing, so that we can progressively fix a codebase with a lot of issues.
+This action runs [svelte-check](http://npmjs.com/svelte-check) on the files that change in a PR (by default), then adds a comment which reports any errors in those files. The inspiration came from wanting to have svelte-check run in CI without failing, so that we can progressively fix a codebase with a lot of issues.
 
 Works with svelte-check version 3 & 4. The action runs using Node 20.
 
@@ -48,9 +48,10 @@ This will add a comment to your PRs with any errors, for example:
 
 ## Options
 
-| Option  | Description                                                                                                                                                                                                              |
-| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `paths` | The folder(s) to run svelte-check in, one per line. It'll only run svelte-check if files in that folder have changed. `svelte-kit sync` will be ran before diagnostics if SvelteKit is found at the folder package.json. |
+| Option          | Description                                                                                                                                                                                                              | Default |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------- |
+| `paths`         | The folder(s) to run svelte-check in, one per line. It'll only run svelte-check if files in that folder have changed. `svelte-kit sync` will be ran before diagnostics if SvelteKit is found at the folder package.json. | `.`     |
+| `filterChanges` | When true only the files that change (in the pull request) will be checked                                                                                                                                               | `true`  |
 
 You can configure the action by passing the options under the `with` key, for example:
 
