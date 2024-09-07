@@ -18906,7 +18906,7 @@ var require_core = __commonJS({
       return inputs.map((input) => input.trim());
     }
     exports2.getMultilineInput = getMultilineInput2;
-    function getBooleanInput(name, options) {
+    function getBooleanInput2(name, options) {
       const trueValue = ["true", "True", "TRUE"];
       const falseValue = ["false", "False", "FALSE"];
       const val = getInput(name, options);
@@ -18917,7 +18917,7 @@ var require_core = __commonJS({
       throw new TypeError(`Input does not meet YAML 1.2 "Core Schema" specification: ${name}
 Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
     }
-    exports2.getBooleanInput = getBooleanInput;
+    exports2.getBooleanInput = getBooleanInput2;
     function setOutput(name, value) {
       const filePath = process.env["GITHUB_OUTPUT"] || "";
       if (filePath) {
@@ -28766,24 +28766,34 @@ async function main() {
       blob_url: file.blob_url
     })
   );
+  const filterChanges = core.getBooleanInput("filterChanges") ?? true;
   console.log("debug:", {
     diagnostic_paths,
     root: repo_root,
     pull_number,
     pr_files,
     owner,
-    repo
+    repo,
+    filterChanges
   });
   const diagnostics = [];
   for (const d_path of diagnostic_paths) {
-    const has_changed = pr_files.some((pr_file) => is_subdir(d_path, pr_file.local_path));
+    const has_changed = filterChanges ? pr_files.some((pr_file) => is_subdir(d_path, pr_file.local_path)) : true;
     console.log(has_changed ? "checking" : "skipped", d_path);
     if (has_changed) {
       const new_diagnostics = await get_diagnostics(d_path);
       diagnostics.push(...new_diagnostics);
     }
   }
-  const markdown = await render(diagnostics, repo_root, pr_files);
+  const markdown = await render(
+    diagnostics,
+    repo_root,
+    filterChanges ? pr_files : diagnostics.flatMap((d) => ({
+      relative_path: d.fileName,
+      local_path: d.path,
+      blob_url: "https://todo"
+    }))
+  );
   const { data: comments } = await octokit.rest.issues.listComments({
     issue_number: pull_number,
     owner,
