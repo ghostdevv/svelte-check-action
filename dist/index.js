@@ -28788,11 +28788,14 @@ async function main() {
   const markdown = await render(
     diagnostics,
     repo_root,
-    filterChanges ? pr_files : diagnostics.flatMap((d) => ({
+    filterChanges ? pr_files : diagnostics.map((d) => ({
       relative_path: d.fileName,
       local_path: d.path,
       blob_url: "https://todo"
-    }))
+    })).reduce(
+      (a, c) => a.find((d) => d.local_path == c.local_path) ? a : [...a, c],
+      []
+    )
   );
   const { data: comments } = await octokit.rest.issues.listComments({
     issue_number: pull_number,

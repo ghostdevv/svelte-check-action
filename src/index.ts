@@ -71,11 +71,16 @@ async function main() {
 		repo_root,
 		filterChanges
 			? pr_files
-			: diagnostics.flatMap((d) => ({
-					relative_path: d.fileName,
-					local_path: d.path,
-					blob_url: 'https://todo',
-				})),
+			: diagnostics
+					.map((d) => ({
+						relative_path: d.fileName,
+						local_path: d.path,
+						blob_url: 'https://todo',
+					}))
+					.reduce(
+						(a, c) => (a.find((d) => d.local_path == c.local_path) ? a : [...a, c]),
+						[] as PRFile[],
+					),
 	);
 
 	const { data: comments } = await octokit.rest.issues.listComments({
