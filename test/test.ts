@@ -1,6 +1,6 @@
-import { render, type PRFile } from '../src/render';
 import { get_diagnostics } from '../src/diagnostic';
 import { writeFile } from 'node:fs/promises';
+import { render } from '../src/render';
 import { join } from 'node:path';
 
 const diagnostics = await get_diagnostics(import.meta.dirname);
