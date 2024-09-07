@@ -27109,6 +27109,8 @@ async function try_run_svelte_kit_sync(cwd) {
 
 // src/index.ts
 var import_node_path2 = require("path");
+var github = __toESM(require_github());
+var core = __toESM(require_core());
 
 // src/render.ts
 var import_node_child_process2 = require("child_process");
@@ -28743,8 +28745,6 @@ Last Updated: <span title="${now.toISOString()}">${format(now, "do MMMM 'at' HH:
 }
 
 // src/index.ts
-var github = __toESM(require_github());
-var core = __toESM(require_core());
 function is_subdir(parent, child) {
   return !(0, import_node_path2.relative)((0, import_node_path2.normalize)(parent), (0, import_node_path2.normalize)(child)).startsWith("..");
 }
@@ -28756,12 +28756,13 @@ async function main() {
   const octokit = github.getOctokit(token);
   const pull_number = github.context.payload.pull_request?.number;
   if (!pull_number) throw new Error("Can't find a pull request, are you running this on a pr?");
+  const filter_changes = core.getBooleanInput("filterChanges") ?? true;
   const { owner, repo } = github.context.repo;
-  const { data: pr_files_list } = await octokit.rest.pulls.listFiles({
+  const pr_files_response = filter_changes ? await octokit.rest.pulls.listFiles({
     pull_number,
     owner,
     repo
-  });
+  }) : null;
   const { data: pr } = await octokit.rest.pulls.get({
     pull_number,
     owner,
@@ -28769,12 +28770,11 @@ async function main() {
   });
   const diagnostic_paths = core.getMultilineInput("paths").map((path) => (0, import_node_path2.join)(repo_root, path));
   if (diagnostic_paths.length == 0) diagnostic_paths.push(repo_root);
-  const pr_files = pr_files_list.map((file) => (0, import_node_path2.join)(repo_root, file.filename));
-  const filterChanges = core.getBooleanInput("filterChanges") ?? true;
+  const pr_files = pr_files_response?.data.map((file) => (0, import_node_path2.join)(repo_root, file.filename));
   const latest_commit = pr.head.sha;
   console.log("debug:", {
     diagnostic_paths,
-    filterChanges,
+    filter_changes,
     latest_commit,
     pull_number,
     repo_root,
@@ -28784,7 +28784,7 @@ async function main() {
   });
   const diagnostics = [];
   for (const d_path of diagnostic_paths) {
-    const has_changed = filterChanges ? pr_files.some((pr_file) => is_subdir(d_path, pr_file)) : true;
+    const has_changed = pr_files && pr_files.some((pr_file) => is_subdir(d_path, pr_file));
     console.log(has_changed ? "checking" : "skipped", d_path);
     if (has_changed) {
       const new_diagnostics = await get_diagnostics(d_path);
@@ -28795,7 +28795,7 @@ async function main() {
     diagnostics,
     repo_root,
     `https://github.com/${owner}/${repo}/blob/${latest_commit}`,
-    filterChanges ? pr_files : diagnostics.map((d) => d.path)
+    filter_changes ? pr_files : diagnostics.map((d) => d.path)
   );
   const { data: comments } = await octokit.rest.issues.listComments({
     issue_number: pull_number,
