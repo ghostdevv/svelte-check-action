@@ -11,6 +11,10 @@ inputs:
         description: 'The path(s) to run svelte-check from, one per line'
         required: false
         default: '.'
+    filterChanges:
+        description: 'Whether to filter svelte-check output to only include errors in the files the PR changes'
+        required: false
+        default: 'true'
 
 runs:
     using: 'node20'

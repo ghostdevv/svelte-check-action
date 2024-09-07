@@ -48,10 +48,15 @@ async function main() {
 		repo,
 	});
 
+	const filterChanges = core.getBooleanInput('filterChanges') ?? true;
+
 	const diagnostics: Diagnostic[] = [];
 
 	for (const d_path of diagnostic_paths) {
-		const has_changed = pr_files.some((pr_file) => is_subdir(d_path, pr_file.local_path));
+		const has_changed = filterChanges
+			? pr_files.some((pr_file) => is_subdir(d_path, pr_file.local_path))
+			: true;
+
 		console.log(has_changed ? 'checking' : 'skipped', d_path);
 
 		if (has_changed) {
@@ -60,7 +65,17 @@ async function main() {
 		}
 	}
 
-	const markdown = await render(diagnostics, repo_root, pr_files);
+	const markdown = await render(
+		diagnostics,
+		repo_root,
+		filterChanges
+			? pr_files
+			: diagnostics.flatMap((d) => ({
+					relative_path: d.fileName,
+					local_path: d.path,
+					blob_url: 'https://todo',
+				})),
+	);
 
 	const { data: comments } = await octokit.rest.issues.listComments({
 		issue_number: pull_number,
