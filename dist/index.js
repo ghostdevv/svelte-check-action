@@ -28692,17 +28692,23 @@ function get_latest_commit() {
 function pretty_type(type) {
   return type == "error" ? "Error" : "Warn";
 }
-async function render(all_diagnostics, repo_root, pr_files) {
+async function render(all_diagnostics, repo_root, file_url_base, changed_files) {
+  const diagnostics_map = /* @__PURE__ */ new Map();
   let diagnostic_count = 0;
+  for (const diagnostic of all_diagnostics) {
+    if (changed_files && !changed_files.includes(diagnostic.path)) continue;
+    const current = diagnostics_map.get(diagnostic.path) ?? [];
+    current.push(diagnostic);
+    diagnostics_map.set(diagnostic.path, current);
+    diagnostic_count++;
+  }
   let markdown = ``;
-  for (const pr_file of pr_files) {
-    const diagnostics = all_diagnostics.filter((d) => d.path == pr_file.local_path);
-    if (diagnostics.length == 0) continue;
-    const readable_path = pr_file.local_path.replace(repo_root, "").replace(/^\/+/, "");
-    const lines = await (0, import_promises2.readFile)(pr_file.local_path, "utf-8").then((c) => c.split("\n"));
+  for (const [path, diagnostics] of diagnostics_map) {
+    const readable_path = path.replace(repo_root, "").replace(/^\/+/, "");
+    const lines = await (0, import_promises2.readFile)(path, "utf-8").then((c) => c.split("\n"));
     const diagnostics_markdown = diagnostics.map(
       // prettier-ignore
-      (d) => `#### [${readable_path}:${d.start.line}:${d.start.character}](${pr_file.blob_url}#L${d.start.line}${d.start.line != d.end.line ? `-L${d.end.line}` : ""})
+      (d) => `#### [${readable_path}:${d.start.line}:${d.start.character}](${file_url_base}/${readable_path}#L${d.start.line}${d.start.line != d.end.line ? `-L${d.end.line}` : ""})
 
 \`\`\`ts
 ${pretty_type(d.type)}: ${d.message}
@@ -28711,7 +28717,6 @@ ${lines.slice(d.start.line - 1, d.end.line).join("\n").trim()}
 \`\`\`
 `
     );
-    diagnostic_count += diagnostics.length;
     markdown += `
 
 <details>
@@ -28723,7 +28728,7 @@ ${diagnostics_markdown.join("\n")}
   const now = /* @__PURE__ */ new Date();
   const main_content = diagnostic_count ? (
     // prettier-ignore
-    `Found **${diagnostic_count}** issues with the files in this PR (${all_diagnostics.length} total)
+    `Found **${diagnostic_count}** issues ${changed_files ? "with the files in this PR " : ""}(${all_diagnostics.length} total)
 
 ${markdown.trim()}`
   ) : "No issues found! \u{1F389}";
@@ -28752,33 +28757,34 @@ async function main() {
   const pull_number = github.context.payload.pull_request?.number;
   if (!pull_number) throw new Error("Can't find a pull request, are you running this on a pr?");
   const { owner, repo } = github.context.repo;
-  const diagnostic_paths = core.getMultilineInput("paths").map((path) => (0, import_node_path2.join)(repo_root, path));
-  if (diagnostic_paths.length == 0) diagnostic_paths.push(repo_root);
   const { data: pr_files_list } = await octokit.rest.pulls.listFiles({
     pull_number,
     owner,
     repo
   });
-  const pr_files = pr_files_list.map(
-    (file) => ({
-      local_path: (0, import_node_path2.join)(repo_root, file.filename),
-      relative_path: file.filename,
-      blob_url: file.blob_url
-    })
-  );
+  const { data: pr } = await octokit.rest.pulls.get({
+    pull_number,
+    owner,
+    repo
+  });
+  const diagnostic_paths = core.getMultilineInput("paths").map((path) => (0, import_node_path2.join)(repo_root, path));
+  if (diagnostic_paths.length == 0) diagnostic_paths.push(repo_root);
+  const pr_files = pr_files_list.map((file) => (0, import_node_path2.join)(repo_root, file.filename));
   const filterChanges = core.getBooleanInput("filterChanges") ?? true;
+  const latest_commit = pr.head.sha;
   console.log("debug:", {
     diagnostic_paths,
-    root: repo_root,
+    filterChanges,
+    latest_commit,
     pull_number,
+    repo_root,
     pr_files,
     owner,
-    repo,
-    filterChanges
+    repo
   });
   const diagnostics = [];
   for (const d_path of diagnostic_paths) {
-    const has_changed = filterChanges ? pr_files.some((pr_file) => is_subdir(d_path, pr_file.local_path)) : true;
+    const has_changed = filterChanges ? pr_files.some((pr_file) => is_subdir(d_path, pr_file)) : true;
     console.log(has_changed ? "checking" : "skipped", d_path);
     if (has_changed) {
       const new_diagnostics = await get_diagnostics(d_path);
@@ -28788,14 +28794,8 @@ async function main() {
   const markdown = await render(
     diagnostics,
     repo_root,
-    filterChanges ? pr_files : diagnostics.map((d) => ({
-      relative_path: d.fileName,
-      local_path: d.path,
-      blob_url: "https://todo"
-    })).reduce(
-      (a, c) => a.find((d) => d.local_path == c.local_path) ? a : [...a, c],
-      []
-    )
+    `https://github.com/${owner}/${repo}/blob/${latest_commit}`,
+    filterChanges ? pr_files : diagnostics.map((d) => d.path)
   );
   const { data: comments } = await octokit.rest.issues.listComments({
     issue_number: pull_number,

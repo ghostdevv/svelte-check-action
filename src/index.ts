@@ -22,40 +22,41 @@ async function main() {
 
 	const { owner, repo } = github.context.repo;
 
-	const diagnostic_paths = core.getMultilineInput('paths').map((path) => join(repo_root, path));
-	if (diagnostic_paths.length == 0) diagnostic_paths.push(repo_root);
-
 	const { data: pr_files_list } = await octokit.rest.pulls.listFiles({
 		pull_number,
 		owner,
 		repo,
 	});
 
-	const pr_files = pr_files_list.map(
-		(file): PRFile => ({
-			local_path: join(repo_root, file.filename),
-			relative_path: file.filename,
-			blob_url: file.blob_url,
-		}),
-	);
+	const { data: pr } = await octokit.rest.pulls.get({
+		pull_number,
+		owner,
+		repo,
+	});
 
+	const diagnostic_paths = core.getMultilineInput('paths').map((path) => join(repo_root, path));
+	if (diagnostic_paths.length == 0) diagnostic_paths.push(repo_root);
+
+	const pr_files = pr_files_list.map((file) => join(repo_root, file.filename));
 	const filterChanges = core.getBooleanInput('filterChanges') ?? true;
+	const latest_commit = pr.head.sha;
 
 	console.log('debug:', {
 		diagnostic_paths,
-		root: repo_root,
+		filterChanges,
+		latest_commit,
 		pull_number,
+		repo_root,
 		pr_files,
 		owner,
 		repo,
-		filterChanges,
 	});
 
 	const diagnostics: Diagnostic[] = [];
 
 	for (const d_path of diagnostic_paths) {
 		const has_changed = filterChanges
-			? pr_files.some((pr_file) => is_subdir(d_path, pr_file.local_path))
+			? pr_files.some((pr_file) => is_subdir(d_path, pr_file))
 			: true;
 
 		console.log(has_changed ? 'checking' : 'skipped', d_path);
@@ -69,18 +70,8 @@ async function main() {
 	const markdown = await render(
 		diagnostics,
 		repo_root,
-		filterChanges
-			? pr_files
-			: diagnostics
-					.map((d) => ({
-						relative_path: d.fileName,
-						local_path: d.path,
-						blob_url: 'https://todo',
-					}))
-					.reduce(
-						(a, c) => (a.find((d) => d.local_path == c.local_path) ? a : [...a, c]),
-						[] as PRFile[],
-					),
+		`https://github.com/${owner}/${repo}/blob/${latest_commit}`,
+		filterChanges ? pr_files : diagnostics.map((d) => d.path),
 	);
 
 	const { data: comments } = await octokit.rest.issues.listComments({
