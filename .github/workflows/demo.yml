@@ -26,7 +26,7 @@ jobs:
         run: pnpm install
 
       - name: Run the action
-        uses: ghostdevv/svelte-check-action@main
+        uses: ghostdevv/svelte-check-action@filter-option
         with:
           paths: ./test
         env:
