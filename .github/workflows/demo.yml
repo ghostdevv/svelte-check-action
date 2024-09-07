@@ -29,6 +29,5 @@ jobs:
         uses: ghostdevv/svelte-check-action@filter-option
         with:
           paths: ./test
-          filterChanges: 'false'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
