@@ -39,6 +39,8 @@ async function main() {
 		}),
 	);
 
+	const filterChanges = core.getBooleanInput('filterChanges') ?? true;
+
 	console.log('debug:', {
 		diagnostic_paths,
 		root: repo_root,
@@ -46,9 +48,8 @@ async function main() {
 		pr_files,
 		owner,
 		repo,
+		filterChanges,
 	});
-
-	const filterChanges = core.getBooleanInput('filterChanges') ?? true;
 
 	const diagnostics: Diagnostic[] = [];
 
