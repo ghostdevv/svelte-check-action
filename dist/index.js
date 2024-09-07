@@ -18906,7 +18906,7 @@ var require_core = __commonJS({
       return inputs.map((input) => input.trim());
     }
     exports2.getMultilineInput = getMultilineInput2;
-    function getBooleanInput(name, options) {
+    function getBooleanInput2(name, options) {
       const trueValue = ["true", "True", "TRUE"];
       const falseValue = ["false", "False", "FALSE"];
       const val = getInput(name, options);
@@ -18917,7 +18917,7 @@ var require_core = __commonJS({
       throw new TypeError(`Input does not meet YAML 1.2 "Core Schema" specification: ${name}
 Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
     }
-    exports2.getBooleanInput = getBooleanInput;
+    exports2.getBooleanInput = getBooleanInput2;
     function setOutput(name, value) {
       const filePath = process.env["GITHUB_OUTPUT"] || "";
       if (filePath) {
@@ -27109,6 +27109,8 @@ async function try_run_svelte_kit_sync(cwd) {
 
 // src/index.ts
 var import_node_path2 = require("path");
+var github = __toESM(require_github());
+var core = __toESM(require_core());
 
 // src/render.ts
 var import_node_child_process2 = require("child_process");
@@ -28692,17 +28694,23 @@ function get_latest_commit() {
 function pretty_type(type) {
   return type == "error" ? "Error" : "Warn";
 }
-async function render(all_diagnostics, repo_root, pr_files) {
+async function render(all_diagnostics, repo_root, file_url_base, changed_files) {
+  const diagnostics_map = /* @__PURE__ */ new Map();
   let diagnostic_count = 0;
+  for (const diagnostic of all_diagnostics) {
+    if (changed_files && !changed_files.includes(diagnostic.path)) continue;
+    const current = diagnostics_map.get(diagnostic.path) ?? [];
+    current.push(diagnostic);
+    diagnostics_map.set(diagnostic.path, current);
+    diagnostic_count++;
+  }
   let markdown = ``;
-  for (const pr_file of pr_files) {
-    const diagnostics = all_diagnostics.filter((d) => d.path == pr_file.local_path);
-    if (diagnostics.length == 0) continue;
-    const readable_path = pr_file.local_path.replace(repo_root, "").replace(/^\/+/, "");
-    const lines = await (0, import_promises2.readFile)(pr_file.local_path, "utf-8").then((c) => c.split("\n"));
+  for (const [path, diagnostics] of diagnostics_map) {
+    const readable_path = path.replace(repo_root, "").replace(/^\/+/, "");
+    const lines = await (0, import_promises2.readFile)(path, "utf-8").then((c) => c.split("\n"));
     const diagnostics_markdown = diagnostics.map(
       // prettier-ignore
-      (d) => `#### [${readable_path}:${d.start.line}:${d.start.character}](${pr_file.blob_url}#L${d.start.line}${d.start.line != d.end.line ? `-L${d.end.line}` : ""})
+      (d) => `#### [${readable_path}:${d.start.line}:${d.start.character}](${file_url_base}/${readable_path}#L${d.start.line}${d.start.line != d.end.line ? `-L${d.end.line}` : ""})
 
 \`\`\`ts
 ${pretty_type(d.type)}: ${d.message}
@@ -28711,7 +28719,6 @@ ${lines.slice(d.start.line - 1, d.end.line).join("\n").trim()}
 \`\`\`
 `
     );
-    diagnostic_count += diagnostics.length;
     markdown += `
 
 <details>
@@ -28723,7 +28730,7 @@ ${diagnostics_markdown.join("\n")}
   const now = /* @__PURE__ */ new Date();
   const main_content = diagnostic_count ? (
     // prettier-ignore
-    `Found **${diagnostic_count}** issues with the files in this PR (${all_diagnostics.length} total)
+    `Found **${diagnostic_count}** issues ${changed_files ? "with the files in this PR " : ""}(${all_diagnostics.length} total)
 
 ${markdown.trim()}`
   ) : "No issues found! \u{1F389}";
@@ -28738,8 +28745,6 @@ Last Updated: <span title="${now.toISOString()}">${format(now, "do MMMM 'at' HH:
 }
 
 // src/index.ts
-var github = __toESM(require_github());
-var core = __toESM(require_core());
 function is_subdir(parent, child) {
   return !(0, import_node_path2.relative)((0, import_node_path2.normalize)(parent), (0, import_node_path2.normalize)(child)).startsWith("..");
 }
@@ -28751,39 +28756,47 @@ async function main() {
   const octokit = github.getOctokit(token);
   const pull_number = github.context.payload.pull_request?.number;
   if (!pull_number) throw new Error("Can't find a pull request, are you running this on a pr?");
+  const filter_changes = core.getBooleanInput("filterChanges") ?? true;
   const { owner, repo } = github.context.repo;
-  const diagnostic_paths = core.getMultilineInput("paths").map((path) => (0, import_node_path2.join)(repo_root, path));
-  if (diagnostic_paths.length == 0) diagnostic_paths.push(repo_root);
-  const { data: pr_files_list } = await octokit.rest.pulls.listFiles({
+  const pr_files_response = filter_changes ? await octokit.rest.pulls.listFiles({
+    pull_number,
+    owner,
+    repo
+  }) : null;
+  const { data: pr } = await octokit.rest.pulls.get({
     pull_number,
     owner,
     repo
   });
-  const pr_files = pr_files_list.map(
-    (file) => ({
-      local_path: (0, import_node_path2.join)(repo_root, file.filename),
-      relative_path: file.filename,
-      blob_url: file.blob_url
-    })
-  );
+  const diagnostic_paths = core.getMultilineInput("paths").map((path) => (0, import_node_path2.join)(repo_root, path));
+  if (diagnostic_paths.length == 0) diagnostic_paths.push(repo_root);
+  const pr_files = pr_files_response?.data.map((file) => (0, import_node_path2.join)(repo_root, file.filename));
+  const latest_commit = pr.head.sha;
   console.log("debug:", {
     diagnostic_paths,
-    root: repo_root,
+    filter_changes,
+    latest_commit,
     pull_number,
+    repo_root,
     pr_files,
     owner,
     repo
   });
   const diagnostics = [];
   for (const d_path of diagnostic_paths) {
-    const has_changed = pr_files.some((pr_file) => is_subdir(d_path, pr_file.local_path));
+    const has_changed = pr_files ? pr_files.some((pr_file) => is_subdir(d_path, pr_file)) : true;
     console.log(has_changed ? "checking" : "skipped", d_path);
     if (has_changed) {
       const new_diagnostics = await get_diagnostics(d_path);
       diagnostics.push(...new_diagnostics);
     }
   }
-  const markdown = await render(diagnostics, repo_root, pr_files);
+  const markdown = await render(
+    diagnostics,
+    repo_root,
+    `https://github.com/${owner}/${repo}/blob/${latest_commit}`,
+    filter_changes ? pr_files : diagnostics.map((d) => d.path)
+  );
   const { data: comments } = await octokit.rest.issues.listComments({
     issue_number: pull_number,
     owner,

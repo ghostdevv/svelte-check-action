@@ -22,28 +22,36 @@ function pretty_type(type: Diagnostic['type']) {
 }
 
 /**
- * Render a set of diagnostics to markdown, will filter by changed files
- * @param all_diagnostics
- * @param cwd
- * @param pr_files
+ * Render a set of diagnostics to markdown, will optionally filter by changed files
  */
-export async function render(all_diagnostics: Diagnostic[], repo_root: string, pr_files: PRFile[]) {
+export async function render(
+	all_diagnostics: Diagnostic[],
+	repo_root: string,
+	file_url_base: string,
+	changed_files?: string[],
+) {
+	const diagnostics_map = new Map<string, Diagnostic[]>();
+
 	let diagnostic_count = 0;
+	for (const diagnostic of all_diagnostics) {
+		if (changed_files && !changed_files.includes(diagnostic.path)) continue;
+
+		const current = diagnostics_map.get(diagnostic.path) ?? [];
+		current.push(diagnostic);
+		diagnostics_map.set(diagnostic.path, current);
+		diagnostic_count++;
+	}
+
 	let markdown = ``;
-
-	for (const pr_file of pr_files) {
-		const diagnostics = all_diagnostics.filter((d) => d.path == pr_file.local_path);
-		if (diagnostics.length == 0) continue;
-
-		const readable_path = pr_file.local_path.replace(repo_root, '').replace(/^\/+/, '');
-		const lines = await readFile(pr_file.local_path, 'utf-8').then((c) => c.split('\n'));
+	for (const [path, diagnostics] of diagnostics_map) {
+		const readable_path = path.replace(repo_root, '').replace(/^\/+/, '');
+		const lines = await readFile(path, 'utf-8').then((c) => c.split('\n'));
 
 		const diagnostics_markdown = diagnostics.map(
 			// prettier-ignore
-			(d) => `#### [${readable_path}:${d.start.line}:${d.start.character}](${pr_file.blob_url}#L${d.start.line}${d.start.line != d.end.line ? `-L${d.end.line}` : ''})\n\n\`\`\`ts\n${pretty_type(d.type)}: ${d.message}\n\n${lines.slice(d.start.line - 1, d.end.line).join('\n').trim()}\n\`\`\`\n`,
+			(d) => `#### [${readable_path}:${d.start.line}:${d.start.character}](${file_url_base}/${readable_path}#L${d.start.line}${d.start.line != d.end.line ? `-L${d.end.line}` : ''})\n\n\`\`\`ts\n${pretty_type(d.type)}: ${d.message}\n\n${lines.slice(d.start.line - 1, d.end.line).join('\n').trim()}\n\`\`\`\n`,
 		);
 
-		diagnostic_count += diagnostics.length;
 		// prettier-ignore
 		markdown += `\n\n<details>\n<summary>${readable_path}</summary>\n\n${diagnostics_markdown.join('\n')}\n</details>`;
 	}
@@ -52,7 +60,7 @@ export async function render(all_diagnostics: Diagnostic[], repo_root: string, p
 
 	const main_content = diagnostic_count
 		? // prettier-ignore
-			`Found **${diagnostic_count}** issues with the files in this PR (${all_diagnostics.length} total)\n\n${markdown.trim()}`
+			`Found **${diagnostic_count}** issues ${changed_files ? 'with the files in this PR ' : ''}(${all_diagnostics.length} total)\n\n${markdown.trim()}`
 		: 'No issues found! 🎉';
 
 	// prettier-ignore

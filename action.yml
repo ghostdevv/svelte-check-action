@@ -11,6 +11,10 @@ inputs:
         description: 'The path(s) to run svelte-check from, one per line'
         required: false
         default: '.'
+    filterChanges:
+        description: 'When true only the files that change (in the pull request) will be checked'
+        required: false
+        default: 'true'
 
 runs:
     using: 'node20'
