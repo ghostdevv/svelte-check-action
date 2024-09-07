@@ -57,7 +57,10 @@ async function main() {
 	const diagnostics: Diagnostic[] = [];
 
 	for (const d_path of diagnostic_paths) {
-		const has_changed = pr_files && pr_files.some((pr_file) => is_subdir(d_path, pr_file));
+		const has_changed = pr_files
+			? pr_files.some((pr_file) => is_subdir(d_path, pr_file))
+			: true;
+
 		console.log(has_changed ? 'checking' : 'skipped', d_path);
 
 		if (has_changed) {
