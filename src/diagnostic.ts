@@ -2,9 +2,11 @@
 // https://github.com/SvelteLab/SvelteLab/blob/a3fb823356a9ed1d16eb8535340c9813b7eb547d/src/lib/stores/editor_errors_store.ts#L19
 // https://github.com/SvelteLab/SvelteLab/blob/a3fb823356a9ed1d16eb8535340c9813b7eb547d/src/lib/webcontainer.ts#L301
 
+import { readFile } from 'node:fs/promises';
 import { setFailed } from '@actions/core';
 import { exec } from 'node:child_process';
-import { join } from 'node:path/posix';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { z } from 'zod';
 
 const diagnosticSchema = z.object({
@@ -43,7 +45,9 @@ export interface Diagnostic extends Omit<RawDiagnostic, 'filename'> {
  * @returns Diagnostics
  */
 export async function get_diagnostics(cwd: string) {
-	return new Promise<Diagnostic[]>((resolve) => {
+	await try_run_svelte_kit_sync(cwd);
+
+	return await new Promise<Diagnostic[]>((resolve) => {
 		exec('npx -y svelte-check --output machine-verbose', { cwd }, (error, stdout, stderr) => {
 			if (typeof error?.code == 'number' && error.code > 1) {
 				console.error('Failed to run svelte-check', error);
@@ -74,4 +78,24 @@ export async function get_diagnostics(cwd: string) {
 			resolve(diagnostics);
 		});
 	});
+}
+
+async function try_run_svelte_kit_sync(cwd: string) {
+	const pkg_path = join(cwd, 'package.json');
+	if (!existsSync(pkg_path)) return;
+
+	const pkg = JSON.parse(await readFile(pkg_path, 'utf-8'));
+
+	if (pkg.dependencies?.['@sveltejs/kit'] || pkg.devDependencies?.['@sveltejs/kit']) {
+		console.log(`running svelte-kit sync at "${cwd}"`);
+		await new Promise<void>((resolve) => {
+			exec('npx -y svelte-kit sync', { cwd }, (error) => {
+				if (error) {
+					console.log('svelte-kit sync failed', error);
+				}
+
+				resolve();
+			});
+		});
+	}
 }

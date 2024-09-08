@@ -1,0 +1,21 @@
+name: Tagger
+
+on:
+  release:
+    types: [created, edited]
+
+jobs:
+  actions-tagger:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+     
+      - name: Tag Release
+        uses: stevenjdh/action-tagger@v1
+        with:
+          set-latest-tag: true
