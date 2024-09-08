@@ -28758,7 +28758,8 @@ async function main() {
   if (!pull_number) throw new Error("Can't find a pull request, are you running this on a pr?");
   const filter_changes = core.getBooleanInput("filterChanges") ?? true;
   const { owner, repo } = github.context.repo;
-  const pr_files_response = filter_changes ? await octokit.rest.pulls.listFiles({
+  const pr_files_response = filter_changes ? await octokit.paginate(octokit.rest.pulls.listFiles, {
+    per_page: 100,
     pull_number,
     owner,
     repo
