@@ -41,7 +41,7 @@ async function main() {
 	const diagnostic_paths = core.getMultilineInput('paths').map((path) => join(repo_root, path));
 	if (diagnostic_paths.length == 0) diagnostic_paths.push(repo_root);
 
-	const pr_files = pr_files_response?.data.map((file) => join(repo_root, file.filename));
+	const pr_files = pr_files_response?.map((file) => join(repo_root, file.filename));
 	const latest_commit = pr.head.sha;
 
 	console.log('debug:', {

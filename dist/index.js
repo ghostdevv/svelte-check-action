@@ -28771,7 +28771,7 @@ async function main() {
   });
   const diagnostic_paths = core.getMultilineInput("paths").map((path) => (0, import_node_path2.join)(repo_root, path));
   if (diagnostic_paths.length == 0) diagnostic_paths.push(repo_root);
-  const pr_files = pr_files_response?.data.map((file) => (0, import_node_path2.join)(repo_root, file.filename));
+  const pr_files = pr_files_response?.map((file) => (0, import_node_path2.join)(repo_root, file.filename));
   const latest_commit = pr.head.sha;
   console.log("debug:", {
     diagnostic_paths,
