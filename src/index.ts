@@ -24,7 +24,8 @@ async function main() {
 	const { owner, repo } = github.context.repo;
 
 	const pr_files_response = filter_changes
-		? await octokit.rest.pulls.listFiles({
+		? await octokit.paginate(octokit.rest.pulls.listFiles, {
+				per_page: 100,
 				pull_number,
 				owner,
 				repo,
