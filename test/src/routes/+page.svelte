@@ -6,6 +6,8 @@
 
 <input autofocus />
 
+<div accessKey="z" />
+
 <div
 	on:mouseenter={() => {
 		console.log('something');
