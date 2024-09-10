@@ -15,6 +15,10 @@ inputs:
         description: 'When true only the files that change (in the pull request) will be checked'
         required: false
         default: 'true'
+    failOnError:
+        description: 'Whether to set a failed state if there are any svelte-check errors'
+        required: false
+        default: 'false'
 
 runs:
     using: 'node20'
