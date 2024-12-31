@@ -47,7 +47,7 @@ export interface Diagnostic extends Omit<RawDiagnostic, 'filename'> {
 export async function get_diagnostics(cwd: string) {
 	await try_run_svelte_kit_sync(cwd);
 
-	const result = await exec('npx', ['-y', 'svelte-check', '--output=machine-verbose'], {
+	const result = await exec('npx', ['-y', 'svelte-check@4', '--output=machine-verbose'], {
 		shell: true,
 		cwd,
 	});
