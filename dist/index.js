@@ -31369,7 +31369,7 @@ async function render(ctx, diagnostics_store) {
     output.push("No issues found! \u{1F389}");
   } else {
     output.push(
-      `Found ${pl(diagnostics_store.error_count, "error")} and ${pl(diagnostics_store.warning_count, "warning")} (${diagnostics_store.error_count + diagnostics_store.warning_count} total) ` + (ctx.config.filter_changes ? " with the files in this PR" : "") + ".\n"
+      `Found ${pl(diagnostics_store.error_count, "error")} and ${pl(diagnostics_store.warning_count, "warning")} (${diagnostics_store.error_count + diagnostics_store.warning_count} total) ` + (ctx.config.filter_changes === true ? " with the files in this PR" : "") + ".\n"
     );
     for (const [path, diagnostics] of diagnostics_store.entries()) {
       const readable_path = fmt_path(path, ctx);
