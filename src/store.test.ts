@@ -221,20 +221,6 @@ describe('DiagnosticStore', () => {
 		expect(store.count).toBe(1);
 	});
 
-	it('handles relative vs absolute paths correctly', () => {
-		const ctx = create_ctx(true);
-		const a = create_diagnostic('src/a.svelte');
-		const b = create_diagnostic('src/b.svelte');
-
-		// Test that the path matching works with absolute paths
-		const store = new DiagnosticStore(ctx, [a.path]);
-		store.add(a);
-		store.add(b);
-
-		expect(store.list()).toMatchObject([a]);
-		expect(store.count).toBe(1);
-	});
-
 	it('handles diagnostics with same basename but different directories', () => {
 		const ctx = create_ctx(true);
 		const a = create_diagnostic('src/component.svelte');
@@ -328,5 +314,47 @@ describe('DiagnosticStore', () => {
 		expect(store.filtered_count).toBe(1); // only a matches fail_filter
 		expect(store.filtered_error_count).toBe(1);
 		expect(store.filtered_warning_count).toBe(0);
+	});
+
+	it('handles multiple glob patterns correctly', () => {
+		const ctx = create_ctx(['src/**/*.svelte', 'lib/**/*.ts', 'components/**/*.svelte']);
+		const a = create_diagnostic('src/page.svelte');
+		const b = create_diagnostic('lib/utils.ts');
+		const c = create_diagnostic('components/Button.svelte');
+		const d = create_diagnostic('src/helper.js'); // doesn't match any pattern
+		const e = create_diagnostic('other/file.svelte'); // doesn't match any pattern
+		const f = create_diagnostic('lib/config.js'); // doesn't match any pattern
+
+		// Only a, c, and e are in changed files
+		const store = new DiagnosticStore(ctx, [a.path, c.path, e.path]);
+		store.add(a); // matches src/**/*.svelte, in changed files -> included
+		store.add(b); // matches lib/**/*.ts, not in changed files -> skipped
+		store.add(c); // matches components/**/*.svelte, in changed files -> included
+		store.add(d); // doesn't match any pattern -> included (not filtered)
+		store.add(e); // doesn't match any pattern -> included (not filtered)
+		store.add(f); // doesn't match any pattern -> included (not filtered)
+
+		expect(store.list()).toMatchObject([a, c, d, e, f]);
+		expect(store.count).toBe(5);
+	});
+
+	it('handles extglob patterns to exclude directories', () => {
+		const ctx = create_ctx(['!(src/**/*)/**/*']); // excludes src and everything under it
+		const a = create_diagnostic('src/component.svelte');
+		const b = create_diagnostic('src/nested/file.ts');
+		const c = create_diagnostic('lib/utils.ts');
+		const d = create_diagnostic('components/Button.svelte');
+		const e = create_diagnostic('test/spec.js');
+
+		// Only a and c are in changed files
+		const store = new DiagnosticStore(ctx, [a.path, c.path]);
+		store.add(a); // doesn't match !(src/**)/**/* (is excluded) -> included (not filtered)
+		store.add(b); // doesn't match !(src/**)/**/* (is excluded) -> included (not filtered)
+		store.add(c); // matches !(src/**)/**/* pattern, in changed files -> included
+		store.add(d); // matches !(src/**)/**/* pattern, not in changed files -> skipped
+		store.add(e); // matches !(src/**)/**/* pattern, not in changed files -> skipped
+
+		expect(store.list()).toMatchObject([a, b, c]);
+		expect(store.count).toBe(3);
 	});
 });
