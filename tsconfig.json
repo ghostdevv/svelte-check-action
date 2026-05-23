@@ -12,7 +12,8 @@
 		"module": "ESNext",
 		"target": "ESNext",
 		"moduleResolution": "Bundler",
-		"noEmit": true
+		"noEmit": true,
+		"types": ["node"]
 	},
 	"exclude": ["node_modules/**"]
 }
