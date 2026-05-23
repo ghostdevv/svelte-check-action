@@ -9,5 +9,5 @@
 <div
 	on:mouseenter={() => {
 		console.log('something');
-	}}>
-</div>
+	}}
+></div>

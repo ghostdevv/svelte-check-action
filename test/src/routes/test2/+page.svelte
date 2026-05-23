@@ -1,1 +1,1 @@
-<svelte:component></svelte:component>
+<div />

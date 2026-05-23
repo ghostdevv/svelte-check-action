@@ -35,6 +35,9 @@ importers:
       prettier:
         specifier: 3.8.3
         version: 3.8.3
+      prettier-plugin-svelte:
+        specifier: ^4.0.1
+        version: 4.0.1(prettier@3.8.3)(svelte@5.55.9)
       tsup:
         specifier: 8.5.1
         version: 8.5.1(postcss@8.5.15)(typescript@6.0.3)
