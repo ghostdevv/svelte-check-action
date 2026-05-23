@@ -129,6 +129,6 @@ function get_boolean_or_picomatch_input(
 	try {
 		return core.getBooleanInput(name);
 	} catch {
-		return picomatch(core.getMultilineInput(name), { cwd: repo_root });
+		return picomatch(core.getMultilineInput(name));
 	}
 }

@@ -25,9 +25,7 @@ function create_ctx(filter_changes: boolean | string[]): CTX {
 			fail_on_warning: false,
 			diagnostic_paths: [],
 			filter_changes:
-				typeof filter_changes === 'boolean'
-					? filter_changes
-					: picomatch(filter_changes, { cwd: repo_root }),
+				typeof filter_changes === 'boolean' ? filter_changes : picomatch(filter_changes),
 		},
 	};
 }
