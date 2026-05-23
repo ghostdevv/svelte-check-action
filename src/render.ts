@@ -1,5 +1,5 @@
 import { fmt_path, get_blob_base } from './files';
-import type { DiagnosticStore } from './index';
+import type { DiagnosticStore } from './store';
 import type { Diagnostic } from './diagnostic';
 import { execSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
