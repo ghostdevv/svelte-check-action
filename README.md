@@ -8,9 +8,13 @@ name: Svelte Check
 on:
     - pull_request
 
+permissions: {}
+
 jobs:
-    demo:
+    svelte-check:
         runs-on: ubuntu-latest
+        permissions:
+            pull-requests: write # Required to be able to comment on PRs
         steps:
             - name: Checkout
               uses: actions/checkout@v4
