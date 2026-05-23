@@ -37,7 +37,7 @@ jobs:
 
             # Run the svelte check action
             - name: Svelte Check
-              uses: ghostdevv/svelte-check-action@v1
+              uses: ghostdevv/svelte-check-action@7076668a9977fea5afc67b377f4449bb3de5d6e4 # v1.6.0
 ```
 
 This will add a comment to your PRs with any errors, for example:
@@ -65,7 +65,7 @@ You can configure the action by passing the options under the `with` key, for ex
 
 ```yaml
 - name: Svelte Check
-  uses: ghostdevv/svelte-check-action@v1
+  uses: ghostdevv/svelte-check-action@7076668a9977fea5afc67b377f4449bb3de5d6e4 # v1.6.0
   with:
       paths: |
           ./packages/app
