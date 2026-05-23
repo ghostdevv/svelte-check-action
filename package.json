@@ -31,10 +31,5 @@
 	"volta": {
 		"node": "20.20.2",
 		"pnpm": "10.11.1"
-	},
-	"engines": {
-		"pnpm": "10.11.1",
-		"npm": "forbidden, use pnpm",
-		"node": "^20.19.2"
 	}
 }
