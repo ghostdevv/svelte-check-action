@@ -6,6 +6,10 @@ on:
 
 permissions: {}
 
+# Please view the README for a complete example action
+# This is setup to run the changes, as well as the specific node version
+# we're targeting
+
 jobs:
     demo:
         runs-on: ubuntu-latest
@@ -30,10 +34,8 @@ jobs:
             - name: Install
               run: pnpm install
 
-            # For a full documented example please checkout the README.md
             - name: svelte-check
-              # uses: ghostdevv/svelte-check-action@main
-              uses: ./
+              uses: ./ # in prod: ghostdevv/svelte-check-action
               with:
                   paths: ./test
                   filterChanges: false

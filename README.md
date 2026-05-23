@@ -17,20 +17,20 @@ jobs:
             pull-requests: write # Required to be able to comment on PRs
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
-
-            # You can replace these steps with your specific setup steps
-            # This example assumes Node 22 and pnpm 10
-            - name: Setup Node 22
-              uses: actions/setup-node@v4
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
               with:
-                  node-version: 22
-                  registry-url: https://registry.npmjs.org/
+                  persist-credentials: false
 
             - name: Setup PNPM
-              uses: pnpm/action-setup@v4.1.0
+              uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+
+            # You can replace these steps with your specific setup steps
+            # This example assumes Node 24 and pnpm
+            - name: Setup Node 24
+              uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
               with:
-                  version: 10.11.1
+                  node-version: 24
+                  cache: pnpm
 
             - name: Install
               run: pnpm install
