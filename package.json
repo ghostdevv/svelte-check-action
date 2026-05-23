@@ -21,7 +21,7 @@
 		"nanoexec": "1.1.0",
 		"picomatch": "4.0.2",
 		"prettier": "3.8.3",
-		"prettier-plugin-svelte": "^4.0.1",
+		"prettier-plugin-svelte": "4.0.1",
 		"tsup": "8.5.1",
 		"typescript": "6.0.3",
 		"valibot": "1.4.0",
