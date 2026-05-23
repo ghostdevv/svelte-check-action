@@ -41,12 +41,12 @@ importers:
       typescript:
         specifier: 6.0.3
         version: 6.0.3
+      valibot:
+        specifier: 1.4.0
+        version: 1.4.0(typescript@6.0.3)
       vitest:
         specifier: 4.1.7
         version: 4.1.7(@types/node@20.19.41)(vite@8.0.14(@types/node@20.19.41)(esbuild@0.27.7))
-      zod:
-        specifier: 4.4.3
-        version: 4.4.3
 
   test:
     devDependencies:
@@ -1176,6 +1176,14 @@ packages:
   universal-user-agent@7.0.3:
     resolution: {integrity: sha512-TmnEAEAsBJVZM/AADELsK76llnwcf9vMKuPz8JflO1frO8Lchitr0fNaN9d+Ap0BjKtqWqd/J17qeDnXh8CL2A==}
 
+  valibot@1.4.0:
+    resolution: {integrity: sha512-iC/x7fVcSyOwlm/VSt7RlHnzNGLGvR9GnxdifUeWoCJo0q4ZZvrVkIHC6faTlkxG47I2Y4UrFquPuVHCrOnrLg==}
+    peerDependencies:
+      typescript: '>=5'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
   vite@8.0.14:
     resolution: {integrity: sha512-s4BJJ+5y1pYL6Otw51FHhVJQhPnuRinKig64g/1+EUNaJsd3gCKdD31IPFvswUgW9/60QT9oFHbZHbQK5imcxw==}
     engines: {node: ^20.19.0 || >=22.12.0}
@@ -1275,9 +1283,6 @@ packages:
 
   zimmerframe@1.1.4:
     resolution: {integrity: sha512-B58NGBEoc8Y9MWWCQGl/gq9xBCe4IiKM0a2x7GZdQKOW5Exr8S1W24J6OgM1njK8xCRGvAJIL/MxXHf6SkmQKQ==}
-
-  zod@4.4.3:
-    resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
 
 snapshots:
 
@@ -2201,6 +2206,10 @@ snapshots:
 
   universal-user-agent@7.0.3: {}
 
+  valibot@1.4.0(typescript@6.0.3):
+    optionalDependencies:
+      typescript: 6.0.3
+
   vite@8.0.14(@types/node@20.19.41)(esbuild@0.27.7):
     dependencies:
       lightningcss: 1.32.0
@@ -2262,5 +2271,3 @@ snapshots:
       stackback: 0.0.2
 
   zimmerframe@1.1.4: {}
-
-  zod@4.4.3: {}

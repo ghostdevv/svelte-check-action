@@ -7,29 +7,40 @@ import { setFailed } from '@actions/core';
 import * as core from '@actions/core';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
+import * as v from 'valibot';
 import exec from 'nanoexec';
-import { z } from 'zod';
 
-const diagnosticSchema = z.object({
-	type: z
-		.string()
-		.toLowerCase()
-		.refine((type): type is 'error' | 'warning' => ['error', 'warning'].includes(type)),
-	filename: z.string().transform((filename) => `./${filename}`),
-	start: z.object({
-		line: z.number().transform((line) => line + 1),
-		character: z.number(),
+const DiagnosticSchema = v.object({
+	type: v.pipe(
+		v.string(),
+		v.trim(),
+		v.toLowerCase(),
+		v.union([v.literal('error'), v.literal('warning')]),
+	),
+	filename: v.pipe(
+		v.string(),
+		v.transform((filename) => `./${filename}`),
+	),
+	start: v.object({
+		line: v.pipe(
+			v.number(),
+			v.transform((line) => line + 1),
+		),
+		character: v.number(),
 	}),
-	end: z.object({
-		line: z.number().transform((line) => line + 1),
-		character: z.number(),
+	end: v.object({
+		line: v.pipe(
+			v.number(),
+			v.transform((line) => line + 1),
+		),
+		character: v.number(),
 	}),
-	message: z.string(),
-	code: z.union([z.number(), z.string()]).optional(),
-	source: z.string().optional(),
+	message: v.string(),
+	code: v.optional(v.union([v.number(), v.string()])),
+	source: v.optional(v.string()),
 });
 
-type RawDiagnostic = z.infer<typeof diagnosticSchema>;
+type RawDiagnostic = v.InferOutput<typeof DiagnosticSchema>;
 
 /**
  * A svelte-check diagnostic provides an issue in the codebase
@@ -71,7 +82,7 @@ export async function get_diagnostics(cwd: string) {
 
 		try {
 			const raw = JSON.parse(tail);
-			const { filename, ...diagnostic } = diagnosticSchema.parse(raw);
+			const { filename, ...diagnostic } = v.parse(DiagnosticSchema, raw);
 
 			diagnostics.push({
 				...diagnostic,
@@ -83,7 +94,7 @@ export async function get_diagnostics(cwd: string) {
 			console.error(`cwd: "${cwd}"`);
 			console.error(`line: "${line}"`);
 			// prettier-ignore
-			console.error(`error: `, e instanceof z.ZodError ? e.format() : e instanceof Error ? `"${e.message}"` : `"${e}"`);
+			console.error(`error: `, v.isValiError(e) ? v.flatten(e.issues) : e instanceof Error ? `"${e.message}"` : `"${e}"`);
 			core.endGroup();
 		}
 	}
