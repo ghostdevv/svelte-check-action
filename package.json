@@ -16,7 +16,7 @@
 		"@actions/core": "3.0.1",
 		"@actions/github": "9.1.1",
 		"@biomejs/biome": "2.4.15",
-		"@types/node": "20.19.41",
+		"@types/node": "24.12.4",
 		"@types/picomatch": "4.0.3",
 		"changelogen": "0.6.2",
 		"date-fns": "4.3.0",
@@ -31,7 +31,7 @@
 	},
 	"packageManager": "pnpm@10.33.4",
 	"volta": {
-		"node": "20.20.2",
+		"node": "24.16.0",
 		"pnpm": "10.33.4"
 	}
 }
