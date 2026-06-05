@@ -19,7 +19,7 @@
 		"@types/node": "20.19.41",
 		"@types/picomatch": "4.0.3",
 		"changelogen": "0.6.2",
-		"date-fns": "4.3.0",
+		"date-fns": "4.4.0",
 		"nanoexec": "1.1.0",
 		"picomatch": "4.0.4",
 		"prettier": "3.8.3",
