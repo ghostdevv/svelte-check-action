@@ -99,7 +99,7 @@ export function get_ctx(): CTX {
 	const diagnostic_paths = core.getMultilineInput('paths').map((path) => join(repo_root, path));
 	if (!diagnostic_paths.length) diagnostic_paths.push(repo_root);
 
-	const filter_changes = get_boolean_or_picomatch_input('filterChanges', repo_root);
+	const filter_changes = get_boolean_or_picomatch_input('filterChanges');
 
 	const fail_filter = picomatch(core.getMultilineInput('failFilter'));
 	const fail_on_warning = core.getBooleanInput('failOnWarning');
@@ -122,10 +122,7 @@ export function get_ctx(): CTX {
 	};
 }
 
-function get_boolean_or_picomatch_input(
-	name: string,
-	repo_root: string,
-): boolean | picomatch.Matcher {
+function get_boolean_or_picomatch_input(name: string): boolean | picomatch.Matcher {
 	try {
 		return core.getBooleanInput(name);
 	} catch {
