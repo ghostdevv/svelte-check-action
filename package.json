@@ -16,7 +16,7 @@
 		"@actions/core": "3.0.1",
 		"@actions/github": "9.1.1",
 		"@biomejs/biome": "2.4.16",
-		"@types/node": "20.19.41",
+		"@types/node": "20.19.43",
 		"@types/picomatch": "4.0.3",
 		"changelogen": "0.6.2",
 		"date-fns": "4.4.0",
