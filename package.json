@@ -15,7 +15,7 @@
 	"devDependencies": {
 		"@actions/core": "3.0.1",
 		"@actions/github": "9.1.1",
-		"@biomejs/biome": "2.5.0",
+		"@biomejs/biome": "2.5.1",
 		"@types/node": "20.19.41",
 		"@types/picomatch": "4.0.3",
 		"changelogen": "0.6.2",
@@ -23,7 +23,7 @@
 		"nanoexec": "1.1.0",
 		"picomatch": "4.0.4",
 		"prettier": "3.8.4",
-		"prettier-plugin-svelte": "4.1.0",
+		"prettier-plugin-svelte": "4.1.1",
 		"tsup": "8.5.1",
 		"typescript": "6.0.3",
 		"valibot": "1.4.1",
