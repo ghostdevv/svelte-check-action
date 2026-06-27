@@ -29,9 +29,9 @@
 		"valibot": "1.4.1",
 		"vitest": "4.1.8"
 	},
-	"packageManager": "pnpm@10.34.1",
+	"packageManager": "pnpm@10.34.4",
 	"volta": {
 		"node": "20.20.2",
-		"pnpm": "10.34.1"
+		"pnpm": "10.34.4"
 	}
 }
