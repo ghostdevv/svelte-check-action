@@ -13,7 +13,7 @@ jobs:
             contents: write # Allow tagger to write the tags
         steps:
             - name: Checkout
-              uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
             - name: Tag Release
               uses: stevenjdh/action-tagger@534fa1533fe939d77268fb5b89dfb09c41edca35 # v1.1.0
