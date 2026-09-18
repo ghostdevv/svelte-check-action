@@ -21,7 +21,7 @@
 		"changelogen": "0.6.2",
 		"date-fns": "4.4.0",
 		"nanoexec": "1.1.0",
-		"picomatch": "4.0.4",
+		"picomatch": "4.0.7",
 		"prettier": "3.8.4",
 		"prettier-plugin-svelte": "4.1.1",
 		"tsup": "8.5.1",
